@@ -9,25 +9,26 @@ Curses::Simp - a Simple Curses wrapper for easy application development
 
 =head1 VERSION
 
-This documentation refers to version 1.0.41O4516 of 
-Curses::Simp, which was released on Sat Jan 24 04:05:01:06 2004.
+This documentation refers to version 1.0.41V0L3a of 
+Curses::Simp, which was released on Sat Jan 31 00:21:03:36 2004.
 
 =head1 SYNOPSIS
 
   use Curses::Simp;
-  my $scrn = Curses::Simp->new('text' => ['1337', 'nachoz', 'w/', 'cheese' x 7]);
-  my $keey = '';
-  while($keey ne 'x') {           # wait for 'x' to eXit
-    $keey = $scrn->GetK(-1);      # get a blocking keypress
-    $scrn->Text('push' => $keey); # add new line for new key
-  } # screen automagically draws when new() && Text() are called
+  my $simp = Curses::Simp->new('text' => ['1337', 'nachoz', 'w/',
+                                     'cheese' x 7]);
+  my $key = '';
+  while($key ne 'x') {           # wait for 'x' to eXit
+    $key = $simp->GetKey(-1);    # get a blocking keypress
+    $simp->Text('push' => $key); # push new line for new key
+  }
 
 =head1 DESCRIPTION
 
 Curses::Simp provides a curt mechanism for updating a console screen 
 with any Perl array (or two to include color codes).  Most key strokes
 can be simply obtained and tested for interface manipulation.  The goal
-was ease-of-use first && efficient rendering second.  Of course, it 
+was ease-of-use first and efficient rendering second.  Of course, it 
 could always benefit from being faster still.  Many Simp functions 
 can accept rather cryptic parameters to do fancier things but the most
 common case is meant to be as simple as possible (hence the name).
@@ -38,16 +39,11 @@ Feeping Creatures overcome.
 
 =over 2
 
-=item - fix ShokScrn redrawing / overlapping bugs
-
-=item - optimize autodraw by using Prnt('prin' => 1) nstd of Draw() when
-          only a line chgd with like Text('1' => 'new line 1 text')
-
-=item - fix ptok bars screen jitters (too many touchwin refresh?)
-
 =item - add styles && style/blockchar increment keys to CPik
 
 =item - mk generic file/dir browse dialog window function: Brws
+
+=item - add loop && scal flags w/ togl keys to CPik
 
 =item - describe Simp objects sharing apps (pmix + ptok)
           mk OScr read Simp apps @_ param list && auto-handle --geom wxh+x+y
@@ -85,81 +81,118 @@ Feeping Creatures overcome.
 
 =head1 WHY?
 
-Curses::Simp was created because I could hardly find dox || examples 
+Curses::Simp was created because I could hardly find dox or examples 
 of Curses.pm usage so I fiddled until I could wrap the most important
-stuff (AFAIC) in names && enhanced functions which streamline what I
+stuff (AFAIC) in names and enhanced functions which streamline what I
 want to do.
 
 =head1 USAGE
 
 B<new()> - Curses::Simp object constructor
 
-new() opens a new Curses screen if one does not exist already && 
-initializes useful default screen, color, && keys settings.  The
+new() opens a new Curses screen if one does not exist already and 
+initializes useful default screen, color, and keys settings.  The
 created Curses screen is automagically closed on program exit.
 
-Below are available object methods.  Each of the four letter 
-abbreviated method names as well as those beginning with "Flag" 
-can be used as initialization parameters to new() if lowercased.
-An example:
+Available object methods are described in detail below.  Each of
+the following four letter abbreviated or verbose method names
+can be used as initialization parameters to new():
 
-  my $simp = Curses::Simp->new( 'hite' => 7 ); # set 'hite' at init
-     $simp->Hite(   15 );                 # set 'hite' through Hite()
-     $simp->Height( 31 );                 # set 'hite' through Height()
+   Key       or  VerboseName                =>   Default Value
+  -----         -------------                   ---------------
+  'text'     or 'TextData'                  =>        [ ]
+  'colr'     or 'ColorData'                 =>        [ ]
+  'hite'     or 'WindowHeight'              =>         0
+  'widt'     or 'WindowWidth'               =>         0
+  'yoff'     or 'WindowYOffset'             =>         0
+  'xoff'     or 'WindowXOffset'             =>         0
+  'ycrs'     or 'CursorYOffset'             =>         0
+  'xcrs'     or 'CursorXOffset'             =>         0
+  'btyp'     or 'WindowBorderType'          =>         0
+  'bclr'     or 'WindowBorderColor'         =>        '!w'
+  'titl'     or 'WindowTitle'               =>         ''
+  'tclr'     or 'WindowTitleColor'          =>        '!W'
+  'dndx'     or 'DisplayStackIndex'         =>         0
+  'flagaudr' or 'FlagAutoDraw'              =>         1
+  'flagmaxi' or 'FlagMaximize'              =>         1
+  'flagshrk' or 'FlagShrinkToFit'           =>         1
+  'flagcntr' or 'FlagCenter'                =>         1
+  'flagcvis' or 'FlagCursorVisible'         =>         0
+  'flagscrl' or 'FlagScrollbar'             =>         0
+  'flagsdlk' or 'FlagSDLKey'                =>         0
+  'flagbkgr' or 'FlagBackground'            =>         0
+  'flagfram' or 'FlagTimeFrame'             =>         0
+  'flagmili' or 'FlagMillisecond'           =>         0
+  'flagprin' or 'FlagPrintInto'             =>         1
 
-See the individual sections in the ACCESSOR && FLAG METHODS 
+An example of setting and updating 'WindowHeight':
+
+  use Curses::Simp; 
+  my $simp = Curses::Simp->new( 'WindowHeight' => 7 ); # set
+     $simp->WindowHeight( 15 ); # update
+
+See the individual sections in the L<"ACCESSOR AND FLAG METHODS"> 
 section for more information on how to manipulate created 
 Curses::Simp objects.
 
-Most other Curses::Simp methods also accept a hash parameter which 
-loads the object fields the same as new().
+Most other Curses::Simp methods also accept hash key => value pairs as
+parameters which loads the object fields the same way new() does
+before performing their operation.  This gives you the ability to
+update many Simp fields with a call to any particular 
+accessor method.  The method name just designates where the lone
+value will be assigned and which field will be returned.
 
-=head2 ExpandCC or ExpandColorCodeString($cccs)
+=head2 ExpandCC or ExpandColorCodeString( $CompressedColorCodeString )
 
-Returns the expanded form of the compressed color code string $cccs.
+Returns the expanded form of the compressed color code string 
+$CompressedColorCodeString.
 
-$cccs may contain any of the special formatting characters specified in the 
-COLOR NOTES (Interpretation of Backgrounds && Repeats in Color Codes)
-section.
+$CompressedColorCodeString may contain any of the special formatting 
+characters specified in the L<"COLOR NOTES"> 
+(L<"Interpretation of Backgrounds and Repeats in Color Codes">) section.
 
-ExpandCC() is primarily useful as an internal function to the 
-Curses::Simp package but I have exposed it because it can be useful
-to test && see how a compressed color code string would be expanded
-especially if expansion from Prnt() or Draw() are not what you expect.
+ExpandColorCodeString() is primarily useful as an internal function
+to the Curses::Simp package but I have exposed it because it can
+be useful to test and see how a compressed color code string would
+be expanded especially if expansion from PrintString() or DrawWindow()
+is not what you're expecting.
 
-=head2 ShokScrn or ShockScreen([$cler])
+=head2 ShokScrn or ShockScreen( [$FlagClear] )
 
-ShokScrn() forces the screen && all created Simp objects to be 
-refreshed in order.
+ShockScreen() forces the screen and all created Simp objects
+to be refreshed in order.
 
-The $cler flag (default is false) can be provided to specify that
+The $FlagClear (default is false) can be provided to specify that
 the entire screen is to be cleared before everything refreshes.
 Clearing the entire screen usually isn't necessary.
 
-=head2 KNum or KeyNumbers
+=head2 KNum or KeyNumbers()
 
 Returns a hash with key    numbers  => "names".
 
-=head2 CLet or ColorLetters
+=head2 CLet or ColorLetters()
 
 Returns a hash with color "letters" => numbers.
 
-=head2 NumC or NumColors
+=head2 NumC or NumColors()
 
-Returns the number of available colors (last index: NumC()-1)
+Returns the number of available colors 
+(last index: NumC() - 1)
 
 =head2 Hite or Height
 
-Returns the current Simp object's window height (last index: Hite()-1)
+Returns the current Simp object's window height 
+(last index: Height() - 1)
 
 =head2 Widt or Width
 
-Returns the current Simp object's window width  (last index: Widt()-1)
+Returns the current Simp object's window width  
+(last index: Width() - 1)
 
-=head2 Prnt or PrintString($strn)
+=head2 Prnt or PrintString( $String )
 
-Prints $strn at current cursor position.  Prnt() can also accept a hash 
-of parameters (eg. Prnt('text' => $strn)) where:
+Prints $String at current cursor position.  PrintString() can also accept
+a hash of parameters (eg. PrintString('text' => $String)) where:
 
   'text' => [ "String to Print" ], # or can just be string without arrayref
   'colr' => [ "ColorCodes corresponding to text" ], # same just string optn
@@ -171,94 +204,122 @@ of parameters (eg. Prnt('text' => $strn)) where:
                 #   main Text() && Colr() data or just print to the screen
                 #   temporarily.  Default is true (ie. Print Into Text/Colr)
 
-Prnt() returns the number of characters printed.
+The hash keys can also be the corresponding VerboseNames described in the
+new() section instead of these 4-letter abbreviated key names.
 
-=head2 Draw or DrawWindow
+PrintString() returns the number of characters printed.
 
-Draws the current Simp object with the established Text() and Colr()
-data.
+=head2 Draw or DrawWindow()
 
-Draw() accepts a hash of parameters like new() which will update as
-many attributes of the Simp object as are specified by key => values.
+Draws the current Simp object with the established TextData() and
+ColorData() functions.
 
-Draw() returns the number of lines printed (which is normally the
-same as Hite()).
+DrawWindow() accepts a hash of parameters like new() which will update
+as many attributes of the Simp object as are specified by key => value
+pairs.
 
-=head2 Wait or WaitTime($time)
+DrawWindow() returns the number of lines printed (which is normally the
+same as Height()).
 
-Wait() does nothing for $time seconds.
+=head2 Wait or WaitTime( $Time )
 
-$time can be an integer or floating point number of seconds.
-(eg. Wait(1.27) does nothing for just over one second).
+WaitTime() does nothing for $Time seconds.
 
-Wait() (like GetK()) can also use alternate waiting methods.
-The default $time format is integer or floating seconds.  It can
+$Time can be an integer or floating point number of seconds.
+(eg. WaitTime(1.27) does nothing for just over one second).
+
+WaitTime() (like GetKey()) can also use alternate waiting methods.
+The default $Time format is integer or floating seconds.  It can
 also be a Time::Frame object or an integer of milliseconds.
-These modes can be set with the FlagFram(1) and FlagMili(1)
-methods respectively.
+These modes can be set with the FlagTimeFrame(1) and 
+FlagMillisecond(1) methods respectively.
 
-=head2 GetK or GetKey([$tmot][,$sdlk])
+=head2 GetK or GetKey( [$Timeout [,$FlagSDLKey]] )
 
-Returns a keypress if one is made or -1 after waiting $tmot seconds.
+Returns a keypress if one is made or -1 after waiting $Timeout seconds.
 
-$tmot can be an integer or floating point number of seconds.
-(eg. GetK(2.55) waits for two && one-half seconds before returning -1
+$Timeout can be an integer or floating point number of seconds.
+(eg. GetKey(2.55) waits for two and one-half seconds before returning -1
 if no key was pressed).
 
-Default behavior is to not block (ie. GetK(0)).  Use GetK(-1) for a
+Default behavior is to not block (ie. GetKey(0)).  Use GetKey(-1) for a
 blocking keypress (ie. to wait indefinitely).
 
-GetK() can also use alternate waiting methods.  The default is 
-integer or floating seconds.  It can also utilize Time::Frame objects
+GetKey() can use alternate waiting methods.  The default is integer or
+floating seconds.  It can also utilize Time::Frame objects
 or integer milliseconds if preferred.  These modes can be set with
-the FlagFram(1) and FlagMili(1) methods respectively.
+the FlagTimeFrame(1) and FlagMillisecond(1) methods respectively.
 
-$sdlk is a flag (default is false) which tells GetK() to return a
-verbose key string name from the list of SDLKeys in the SDLKEY NOTES
-section.
+Under normal mode (ie. when $FlagSDLKey is absent or false), GetKey()
+returns a string describing the key pressed.  This will either be a
+single character or the Curses name for the key if a special key was
+pressed.  The list of special key names that can be returned from 
+normal mode are described in the L<"CURSES KEY NOTES"> section.  This
+means that the return value should be easy to test directly like:
 
-The GetK() $sdlk flag parameter sets SDLKey mode temporarily
-(ie. only for a single execution of GetK()).  This mode can be
-turned on permanently via the FlagSDLK(1) function.
+  use Curses::Simp;
+  my $simp = Curses::Simp->new();
+  my $key  = $simp->GetKey(-1); # get a blocking keypress
+  if     ($key eq 'a')         { # do 'a' stuff
+  } elsif($key eq 'b')         { # do 'b' stuff
+  } elsif($key eq 'A')         { # do 'A' stuff
+  } elsif($key eq 'B')         { # do 'B' stuff
+  } elsif($key eq 'KEY_LEFT')  { # do Left-Arrow-Key stuff
+  } elsif($key eq 'KEY_NPAGE') { # do PageDown       stuff
+  } elsif($key eq 'KEY_F1')    { # do F1 (Help)      stuff
+  } elsif(ord($key) ==  9)     { # do Tab    stuff
+  } elsif(ord($key) == 13)     { # do Return stuff
+  } elsif(ord($key) == 27)     { # do Escape stuff
+  }
 
-In SDLKey mode, GetK() returns an SDLKey name from the SDLKEY NOTES
-section and sets the flags in KMod().
+$FlagSDLKey is a flag (default is false) which tells GetKey() to return
+a verbose key string name from the list of SDLKeys in the L<"SDLKEY NOTES">
+section instead of the normal Curses key value or name.  In SDLKey mode,
+GetKey() also sets flags for Shift, Control, and Alt keys which are
+testable through KeyMode().
 
-=head2 KMod or KeyMode([$keyn][,$newv])
+The $FlagSDLKey parameter sets SDLKey mode temporarily (ie. only for a
+single execution of GetKey()).  This mode can be turned on permanently
+via the FlagSDLKey(1) function.
 
-Returns the key mode (state) of the key mode name $keyn.  $keyn
-should be one of the KMOD_ names from the bottom of the SDLKEY NOTES
+If the $Timeout for GetKey() is reached and no keypress has
+occurred (in either normal mode or SDLKey mode), -1 is returned.
+
+=head2 KMod or KeyMode( [$KeyName [,$NewValue]] )
+
+Returns the key mode (state) of the key mode name $KeyName.  $KeyName
+should be one of the KMOD_ names from the bottom of the L<"SDLKEY NOTES">
 section.
 
 If no parameters are provided, the state of KMOD_NONE is returned.
 
-If $newv is provided, $keyn state is set to $newv.
+If $NewValue is provided, the state of $KeyName is set to $NewValue.
 
-=head2 Move or MoveCursor([$ycrs, $xcrs])
+=head2 Move or MoveCursor( [$YCursor, $XCursor] )
 
-Move() updates the current Simp object's cursor position to the
-newly specified $ycrs, $xcrs.
+MoveCursor() updates the current Simp object's cursor position
+to the newly specified $YCursor, $XCursor.
 
 By default, the cursor is not visible but this can be changed through
-the FlagCVis() function.
+the FlagCursorVisible(1) function.
 
-Returns ($ycrs, $xcrs) as the coordinates of cursor.
+Returns ($YCursor, $XCursor) as the coordinates of the cursor.
 
-=head2 Rsiz or ResizeWindow($hite, $widt)
+=head2 Rsiz or ResizeWindow( $Height, $Width )
 
-Rsiz() updates the current Simp object's window dimensions to the
-newly specified $hite, $widt.
+ResizeWindow() updates the current Simp object's window dimensions
+to the newly specified $Height, $Width.
 
-It may help to think of Rsiz() as a wrapper to Hite(), Widt() 
-although actually the opposite is true.
+Think of ResizeWindow() as an easy way to call both Height() and
+Width() at once.
 
-Returns ($hite, $widt) as the dimensions of the window.
+Returns ($Height, $Width) as the dimensions of the window.
 
-=head2 Mesg or MessageWindow($mesg)
+=head2 Mesg or MessageWindow( $Message )
 
-Mesg() draws a Message Window in the center of the screen to 
-display $mesg.  Mesg() can also accept a hash of parameters 
-(eg. Mesg('mesg' => $mesg)) where:
+MessageWindow() draws a Message Window in the center of the screen to 
+display $Message.  MessageWindow() can also accept a hash of parameters 
+(eg. MessageWindow('mesg' => $Message)) where:
 
   'mesg' => "Message to Print",
   'text' => [ "same as new \@text" ],
@@ -269,32 +330,30 @@ display $mesg.  Mesg() can also accept a hash of parameters
   'pres' => "Press A Key...", # string to append if flagpres is true
   'pclr' => "ColorCodes corresponding to pres",
   'wait' => 1.0, # floating number of seconds to wait
-                 #   if flagpres is true, Mesg() waits this long for
-                 #     a keypress before quitting
-                 #   if flagpres is false, Mesg() waits this long
-                 #     regardless of whether keys are pressed
+                 #   if flagpres is true,  MessageWindow() waits this
+                 #     long for a keypress before quitting
+                 #   if flagpres is false, MessageWindow() waits this
+                 #     long regardless of whether keys are pressed
 
-Returns the value of pressed key.  This can be used to make simple
-one-character prompt windows.  For example:
+The hash keys can also be the corresponding VerboseNames described in the
+new() section instead of these 4-letter abbreviated key names.
+
+Returns the value of the pressed key (if the "Press A Key" flag was true).
+This can be used to make simple one-character prompt windows.  For example:
 
   use Curses::Simp;
-  my $simp = Curses::Simp->new();
-  my $answ = $simp->Mesg('titl' => 'Is Simp useful?', 
-                         'mesg' => '(Yes/No)', 
-                         'pres' => '');
-             $simp->Mesg('titl' => 'Answer:', $answ);
-     # ... or another way ...
-     $answ = $simp->Mesg('titl' => 'Is Simp useful?',
-                         'pres' => '(Yes/No)');
-             $simp->Mesg('titl' => 'Answer:', $answ);
+  my $simp   = Curses::Simp->new();
+  my $answer = $simp->MessageWindow('titl' => 'Is Simp useful?',
+                                    'pres' => '(Yes/No)');
+               $simp->MessageWindow('titl' => 'Answer:', $answer);
 
-=head2 Prmt or PromptWindow(\$dref)
+=head2 Prmt or PromptWindow( \$DefaultRef )
 
-Prmt() draws a Prompt Window in the center of the screen to 
-display && update the value of $dref.  \$dref should be a 
-reference to a variable containing a string you want edited or
-replaced.  Prmt() can also accept a hash of parameters 
-(eg. Prmt('dref' => \$dref)) where:
+PromptWindow() draws a Prompt Window in the center of the screen to 
+display and update the value of $DefaultRef.  \$DefaultRef should be 
+a reference to a variable containing a string you want edited or
+replaced.  PromptWindow() can also accept a hash of parameters 
+(eg. PromptWindow('dref' => \$DefaultRef)) where:
 
   'dref' => \$dref, # Default Reference to variable to be read && edited
   'dtxt' => "Default Text string in place of dref",
@@ -308,29 +367,33 @@ replaced.  Prmt() can also accept a hash of parameters
   'tclr' => "ColorCodes corresponding to titl",
   'flagcvis' => 1, # a flag specifying whether the cursor should be displayed
 
-=head2 CPik or ColorPickWindow
+The hash keys can also be the corresponding VerboseNames described in the
+new() section instead of these 4-letter abbreviated key names.
 
-CPik() is a simple Color Picker window.
+=head2 CPik or ColorPickWindow()
 
-It accepts arrow keys to highlight a particular color && enter to select.
+ColorPickWindow() is a simple Color Picker window.
+
+It accepts arrow keys to highlight a particular color and enter to select.
 The letter corresponding to the color or the number of the index can also
 be pressed instead.
 
-Returns the letter of the picked color.
+Returns the letter (ie. the Color Code) of the picked color.
 
-=head2 DESTROY or DelW or DeleteWindow
+=head2 DESTROY or DelW or DeleteWindow()
 
-DelW() deletes all the components of the created Simp object and calls
-ShokScrn() to cause the screen && all other created objects to be redrawn.
+DeleteWindow() deletes all the components of the created Simp object
+and calls ShockScreen() to cause the screen and all other created
+objects to be redrawn.
 
-=head1 ACCESSOR && FLAG METHODS
+=head1 ACCESSOR AND FLAG METHODS
 
-Simp accessor && flag object methods have related interfaces as they
-each access && update a single component field of Curses::Simp objects.  Each
+Simp accessor and flag object methods have related interfaces as they
+each access and update a single component field of Curses::Simp objects.  Each
 one always returns the value of the field they access.  Thus if you want
 to obtain a certain value from a Simp object, just call the accessor
 method with no parameters.  If you provide parameters, the field will
-be updated && will return its new value.
+be updated and will return its new value.
 
 All of these methods accept a default parameter of their own type or
 a hash of operations to perform on their field.
@@ -338,82 +401,94 @@ a hash of operations to perform on their field.
 Some operations are only applicable to a subset of the methods as 
 dictated by the field type.  The available operations are:
 
-   Key   =>   Value Type  ... # Purpose
+   Key   =>   Value Type  
+    NormalName (if different) ... # Purpose
   -----      ------------ 
   'asin' =>  $scalar (number|string|arrayref)
-  # this context-sensitive assignment loads the field
+   'assign' # asin is context-sensitive assignment to load the field
   'blnk' =>  $ignored         # blanks a string value
+   'blank'
   'togl' =>  $ignored         # toggles    a flag value
+   'toggle'
   'true' =>  $ignored         # trues      a flag value
   'fals' =>  $ignored         # falsifies  a flag value
+   'false'
   'incr' =>  $numeric_amount  
-  # increments if no $num is provided or increases by $num
+   'increase' # increments if no $num is provided or increases by $num
   'decr' =>  $numeric_amount  
-  # decrements if no $num is provided or decreases by $num
+   'decrease' # decrements if no $num is provided or decreases by $num
   'nmrc' =>  $string          
+   'numeric'
   # instead of an explicit 'nmrc' hash key, this means the
   #   key is an entirely numeric string like '1023'
-  #   so the value gets assigned to that element when the 
-  #   field is an array.  The key is assigned directly if
+  #   so the value gets assigned to that indexed element when
+  #   the field is an array.  The key is assigned directly if
   #   the field is numeric or a string.
   # ARRAY-SPECIFIC operations:
   'size' => $ignored                # return the array size
   'push' => $scalar (number|string) # push new value
   'popp' => $ignored                # pop last value
+   'pop'
   'apnd' => $scalar (number|string) # append to last element
+   'append'
   'dupl' => $number                 # duplicate last line or
-                                    #   $num line if provided
+   'duplicate'                      #   $num line if provided
   'data' => $arrayref               # assigns the array if
                                     #   $arrayref provided &&
                                     #   returns ALL array data
   # LOOP-SPECIFIC operations:
   'next' => $ignored          # assign to next     in loop
   'prev' => $ignored          # assign to previous in loop
+   'previous'
 
 =head2 Array Accessors
 
-  Text # update the text  array
-  Colr # update the color array
+  Text or TextData  # update the text  array
+  Colr or ColorData # update the color array
 
 =head2 Loop Accessors
 
-  BTyp # loop through border types
+  BTyp or WindowBorderType # loop through border types
 
 =head2 Normal Accessors
 
-  Name             # Description
-  ----             -------------
-  Hite             # window height
-  Widt             # window width
-  YOff             # window y-offset position
-  XOff             # window x-offset position
-  YCrs             # window y-cursor position
-  XCrs             # window x-cursor position
-  BClr             # border color code string
-  Titl             # title string
-  TClr             # title  color code string
-  DNdx             # global display index
+  Name or VerboseName       # Description
+  ----    -----------       -------------
+  Hite or WindowHeight      # window height
+  Widt or WindowWidth       # window width
+  YOff or WindowYOffset     # window y-offset position
+  XOff or WindowXOffset     # window x-offset position
+  YCrs or CursorYOffset     # window y-cursor position
+  XCrs or CursorXOffset     # window x-cursor position
+  BClr or WindowBorderColor # border color code string
+  Titl or WindowTitle       # title string
+  TClr or WindowTitleColor  # title  color code string
+  DNdx or DisplayStackIndex # global display index
 
 =head2 Flag Accessors
 
-  FlagName Default # Description
-  -------- ------- -------------
-  FlagAuDr    1    # Automatic Draw() whenever Text or Colr are updated
-  FlagMaxi    1    # Maximize window
-  FlagShrk    1    # Shrink window to fit Text
-  FlagCntr    1    # Center window within entire available screen
-  FlagCVis    0    # Cursor Visible
-  FlagScrl    0    # use Scrollbars (not implemented yet)
-  FlagSDLK    0    # use advanced SDLKey mode in GetK()
-  FlagBkgr    0    # always expect background colors in color codes
-  FlagFram    0    # use Time::Frame objects  instead of float seconds
-  FlagMili    0    # use integer milliseconds instead of float seconds
-  FlagPrin    1    # Prnt() Into Text array.  If FlagPrin is false, 
-                   #   then each call to Prnt() only writes to the screen
-                   #   temporarily && will be wiped the next time the
-                   #   window behind it is updated.
+  FlagName or VerboseFlagName Default # Description
+  --------    --------------- ------- -------------
+  FlagAuDr or FlagAutoDraw      1    # Automatic DrawWindow() call whenever 
+                                     #   TextData or ColorData are updated
+  FlagMaxi or FlagMaximize      1    # Maximize window
+  FlagShrk or FlagShrinkToFit   1    # Shrink window to fit TextData
+  FlagCntr or FlagCenter        1    # Center window within entire screen
+  FlagCVis or FlagCursorVisible 0    # Cursor Visible
+  FlagScrl or FlagScrollbar     0    # use Scrollbars (not implemented yet)
+  FlagSDLK or FlagSDLKey        0    # use advanced SDLKey mode in GetKey()
+  FlagBkgr or FlagBackground    0    # always expect background colors to be
+                                     #   present in color codes
+  FlagFram or FlagTimeFrame     0    # use Time::Frame objects  instead of
+                                     #   float seconds for timing
+  FlagMili or FlagMillisecond   0    # use integer milliseconds instead of
+                                     #   float seconds for timing
+  FlagPrin or FlagPrintInto     1    # PrintString() prints Into TextData
+    # array.  If FlagPrintInto is false, then each call to PrintString()
+    # only writes to the screen temporarily and will be wiped the next time
+    # the window behind it is updated.
 
-=head2 Accessor && Flag Method Usage Examples
+=head2 Accessor and Flag Method Usage Examples
 
   #!/usr/bin/perl -w
   use strict;
@@ -422,15 +497,15 @@ dictated by the field type.  The available operations are:
   my $simp = Curses::Simp->new('text' => [ 'hmmm', 'haha', 'whoa', 'yeah' ],
                                'colr' => [ 'bbbB', 'bBBw', 'BwrR', 'ROYW' ],
                                'btyp' => 1,
-                               'flagmaxi' => 0); 
+                               'maxi' => 0); 
      $simp->GetK(-1);               # wait for a key press
      $simp->Text('push' => 'weee'); # add more to the Text
      $simp->Colr('push' => 'WwBb'); #              && Colr arrays
-     $simp->FlagMaxi('togl');       # toggle  the maximize flag
+     $simp->Maxi('togl');           # toggle  the maximize flag
      $simp->GetK(-1);               # wait for a key press
      $simp->Text('2'    => 'cool'); # change index two elements of Text
      $simp->Colr('2'    => 'uUCW'); #                           && Colr
-     $simp->FlagMaxi('fals');       # falsify the maximize flag
+     $simp->Maxi('fals');           # falsify the maximize flag
      $simp->GetK(-1);               # wait for a key press
      $simp->Text('popp');           # pop the last elements off Text
      $simp->Colr('popp');           #                        && Colr
@@ -441,13 +516,61 @@ dictated by the field type.  The available operations are:
      $simp->BTyp('incr');           # increment the border type
      $simp->GetK(-1);               # wait for a key press before quitting
 
+=head1 CURSES KEY NOTES
+
+When the GetKey() function is in the normal default mode of input,
+special keypress name strings will be returned when detected.  A
+small set of the names below are found commonly (like the arrow 
+keys, the function keys, HOME, END, PPAGE [PageUp], NPAGE [PageDown],
+IC [Insert], and BACKSPACE) but they are all described here since
+they are supported by L<Curses.pm> and therefore could arise.
+
+The list of returnable Curses Key names are:
+
+      KEY_F1                   KEY_F2                   KEY_F3                 
+      KEY_F4                   KEY_F5                   KEY_F6                 
+      KEY_F7                   KEY_F8                   KEY_F9                 
+      KEY_F10                  KEY_F11                  KEY_F12                
+      KEY_F13                  KEY_F14                  KEY_F15                
+      KEY_A1                   KEY_A3                   KEY_B2                 
+      KEY_BACKSPACE            KEY_BEG                  KEY_BREAK              
+      KEY_BTAB                 KEY_C1                   KEY_C3                 
+      KEY_CANCEL               KEY_CATAB                KEY_CLEAR              
+      KEY_CLOSE                KEY_COMMAND              KEY_COPY               
+      KEY_CREATE               KEY_CTAB                 KEY_DC                 
+      KEY_DL                   KEY_DOWN                 KEY_EIC                
+      KEY_END                  KEY_ENTER                KEY_EOL                
+      KEY_EOS                  KEY_EXIT                 KEY_F0                 
+      KEY_FIND                 KEY_HELP                 KEY_HOME               
+      KEY_IC                   KEY_IL                   KEY_LEFT               
+      KEY_LL                   KEY_MARK                 KEY_MAX                
+      KEY_MESSAGE              KEY_MIN                  KEY_MOVE               
+      KEY_NEXT                 KEY_NPAGE                KEY_OPEN               
+      KEY_OPTIONS              KEY_PPAGE                KEY_PREVIOUS           
+      KEY_PRINT                KEY_REDO                 KEY_REFERENCE          
+      KEY_REFRESH              KEY_REPLACE              KEY_RESET              
+      KEY_RESTART              KEY_RESUME               KEY_RIGHT              
+      KEY_SAVE                 KEY_SBEG                 KEY_SCANCEL            
+      KEY_SCOMMAND             KEY_SCOPY                KEY_SCREATE            
+      KEY_SDC                  KEY_SDL                  KEY_SELECT             
+      KEY_SEND                 KEY_SEOL                 KEY_SEXIT              
+      KEY_SF                   KEY_SFIND                KEY_SHELP              
+      KEY_SHOME                KEY_SIC                  KEY_SLEFT              
+      KEY_SMESSAGE             KEY_SMOVE                KEY_SNEXT              
+      KEY_SOPTIONS             KEY_SPREVIOUS            KEY_SPRINT             
+      KEY_SR                   KEY_SREDO                KEY_SREPLACE           
+      KEY_SRESET               KEY_SRIGHT               KEY_SRSUME             
+      KEY_SSAVE                KEY_SSUSPEND             KEY_STAB               
+      KEY_SUNDO                KEY_SUSPEND              KEY_UNDO               
+      KEY_UP                   KEY_MOUSE                                       
+
 =head1 SDLKEY NOTES
 
-The GetK() function has a special advanced mode of input.  Instead of 
-returning the plain keypress (eg. 'a'), the $sdlk flag parameter can 
-be set to true for temporary SDLKey mode or with FlagSDLK(1) for
-permanence so that verbose strings of SDLKey names will be returned 
-instead (eg. 'SDLK_a').
+The GetKey() function has a special advanced mode of input.
+Instead of returning the plain keypress (eg. 'a'), the $FlagSDLKey
+parameter can be set to true for temporary SDLKey mode or with
+FlagSDLKey(1) for permanence so that verbose strings of SDLKey names
+(eg. 'SDLK_a') will be returned.
 
 The list of returnable SDLKey names are:
 
@@ -524,23 +647,6 @@ The list of returnable SDLKey names are:
   'SDLK_y',              #'y'     y
   'SDLK_z',              #'z'     z
   'SDLK_DELETE',         #'^?'    delete
-  'SDLK_KP0',            #        keypad 0
-  'SDLK_KP1',            #        keypad 1
-  'SDLK_KP2',            #        keypad 2
-  'SDLK_KP3',            #        keypad 3
-  'SDLK_KP4',            #        keypad 4
-  'SDLK_KP5',            #        keypad 5
-  'SDLK_KP6',            #        keypad 6
-  'SDLK_KP7',            #        keypad 7
-  'SDLK_KP8',            #        keypad 8
-  'SDLK_KP9',            #        keypad 9
-  'SDLK_KP_PERIOD',      #'.'     keypad period
-  'SDLK_KP_DIVIDE',      #'/'     keypad divide
-  'SDLK_KP_MULTIPLY',    #'*'     keypad multiply
-  'SDLK_KP_MINUS',       #'-'     keypad minus
-  'SDLK_KP_PLUS',        #'+'     keypad plus
-  'SDLK_KP_ENTER',       #'\r'    keypad enter
-  'SDLK_KP_EQUALS',      #'='     keypad equals
   'SDLK_UP',             #        up arrow
   'SDLK_DOWN',           #        down arrow
   'SDLK_RIGHT',          #        right arrow
@@ -565,6 +671,24 @@ The list of returnable SDLKey names are:
   'SDLK_F13',            #        F13
   'SDLK_F14',            #        F14
   'SDLK_F15',            #        F15
+  # SDLKeys below aren't detected correctly yet
+  'SDLK_KP0',            #        keypad 0
+  'SDLK_KP1',            #        keypad 1
+  'SDLK_KP2',            #        keypad 2
+  'SDLK_KP3',            #        keypad 3
+  'SDLK_KP4',            #        keypad 4
+  'SDLK_KP5',            #        keypad 5
+  'SDLK_KP6',            #        keypad 6
+  'SDLK_KP7',            #        keypad 7
+  'SDLK_KP8',            #        keypad 8
+  'SDLK_KP9',            #        keypad 9
+  'SDLK_KP_PERIOD',      #'.'     keypad period
+  'SDLK_KP_DIVIDE',      #'/'     keypad divide
+  'SDLK_KP_MULTIPLY',    #'*'     keypad multiply
+  'SDLK_KP_MINUS',       #'-'     keypad minus
+  'SDLK_KP_PLUS',        #'+'     keypad plus
+  'SDLK_KP_ENTER',       #'\r'    keypad enter
+  'SDLK_KP_EQUALS',      #'='     keypad equals
   'SDLK_NUMLOCK',        #        numlock
   'SDLK_CAPSLOCK',       #        capslock
   'SDLK_SCROLLOCK',      #        scrollock
@@ -587,7 +711,7 @@ The list of returnable SDLKey names are:
   'SDLK_POWER',          #        power
   'SDLK_EURO',           #        euro
 
-SDLKey mode also sets flags in KMod where:
+SDLKey mode also sets flags in KeyMode() where:
 
    SDL Modifier                    Meaning
   --------------                  ---------
@@ -599,18 +723,19 @@ SDLKey mode also sets flags in KMod where:
 =head1 COLOR NOTES
 
 Colors can be encoded along with each text line to be printed.  
-Prnt() && Draw() each take hash parameters where the key should be
-'colr' && the value is a color code string as described below.
+PrintString() and DrawWindow() each take hash parameters where the
+key should be 'colr' or 'ColorData' and the value is a color code
+string as described below.
 
 A normal color code is simply a single character (typically just the
-first letter of the color name && the case [upper or lower] 
+first letter of the color name and the case [upper or lower] 
 designates high or low intensity [ie. Bold on or off]).  Simple 
 single character color codes represent only the foreground color.
 The default printing mode of color codes assumes black background
 colors for everything.  There are special ways to specify non-black
 background colors or to encode repeating color codes if you want to.
-The default to assume no background colors are specified can be
-overridden object-wide by the FlagBkgr(1) function.
+The default (which assumes no background colors are specified) can
+be overridden object-wide by the FlagBackground(1) function.
 
 =head2 Normal Color Code Reference
 
@@ -627,27 +752,28 @@ overridden object-wide by the FlagBkgr(1) function.
 There is a special exception for Upper-Case 'O' (Orange).  Orange is
 actually Dark Yellow but it is often much brighter than any of the 
 other dark colors which leads to confusion.  Therefore, Upper-Case 'O'
-breaks the (upper-case = bright) rule && is interpreted the same as
+breaks the (upper-case = bright) rule and is interpreted the same as
 Lower-Case 'y'.  Every other color code is consistent with the rule.
 
-=head2 Interpretation of Backgrounds && Repeats in Color Codes
+=head2 Interpretation of Backgrounds and Repeats in Color Codes
 
 The following mechanisms are available for changing the default color
-code string interpretation to read background colors after foreground &&
-to specify abbreviations for code repeating:
+code string interpretation to read background colors after foreground
+and to specify abbreviations for code repeating:
 
-The function FlagBkgr(1) will specify that you wish to have all color 
-codes interpreted expecting both foreground && background characters for
-each source text character.  Similarly, FlagBkgr(0) (which is the default
-setting of not expecting Background characters) will turn off global
-background interpretation.
+The function FlagBackground(1) will specify that you wish to have all
+color codes interpreted expecting both foreground and background
+characters for each source text character.  Similarly,
+FlagBackground(0) (which is the default setting of not expecting
+Background characters) will turn off global background interpretation.
 
-The base64 characters specified below are in the set [0-9A-Za-z._] &&
-are interpreted using the Math::BaseCnv module.
+The base64 characters specified below are in the set [0-9A-Za-z._] and
+are interpreted using the L<Math::BaseCnv> module available from the CPAN.
 
 A space in a color code string is the same as 'b' (black).
 
-When Background mode is OFF (ie. the default after FlagBkgr(0) or a '!'):
+When Background mode is OFF (ie. the default after FlagBackground(0)
+or a code string following the '!' [Simp!] character):
 
    x - When this lowercase times character is used, it must be followed
          by a base64 character which specifies how many times the color
@@ -660,43 +786,46 @@ When Background mode is OFF (ie. the default after FlagBkgr(0) or a '!'):
          following foreground color code characters.
          After that, backgrounds return to black.
    , - The comma character specifies that the next two characters are a
-         foreground && background color pair.
+         foreground and background color pair.
          After that, backgrounds return to black.
    : - The colon character specifies that the following character is a
          (presumably non-black) background character to use instead of 
          the default black for the remainder of the line (or until another
          special character overrides this one).
-   ; - The semicolon character specifies that the remaining part of the
-         current color code line should be interpreted as if full
-         background interpretation were turned ON (as if FlagBkgr(1) had
-         been called just for this line) so further interpretation
-         proceeds like the FlagBkgr(1) section below.
+   ; - The semicolon (Advanced;) character specifies that the remaining
+         part of the current color code line should be interpreted as if
+         full background interpretation were turned ON (as if
+         FlagBackground(1) had been called just for this line) so
+         further interpretation proceeds like the FlagBackground(1)
+         section below.
 
    Each background specification character takes effect starting with the 
      next encountered foreground character so:
-       'RgX2UU', 'R:gUU', && 'R;Ugx2' all expand to 'RbUgUg' not 'RgUgUb'
+       'RgX2UU', 'R:gUU', and 'R;Ugx2' all expand to 'RbUgUg' not 'RgUgUb'
    Some Examples:
-     Prnt('Hello World',  # the simplest 1-to-1 text/color printing with
-          'WWWWW UUUUU'); #   all characters printed on black background
-     Prnt('Hello World', 
-          'Wx5bUx5');     # the same as above but using repeat (x) times
-       Both of the above Prnt() calls would print 'Hello' in Bright White
-         && 'World' in Bright blUe both on the default black background.
-         The color strings would expanded from 
+     PrintString('Hello World',  # the simplest 1-to-1 text/color printing
+                 'WWWWW UUUUU'); # all characters printed on black background
+     PrintString('Hello World',  # the same as above but...
+                 'Wx5bUx5');     #   using repeat (x) times
+       Both of the above PrintString() calls would print 'Hello' in Bright
+         White and 'World' in Bright blUe both on the default black
+         background.  The color strings would expand from:
            'WWWWW UUUUU' or 'Wx5bUx5' to 'WbWbWbWbWbbbUbUbUbUbUb';
-     Prnt('Hello World', 
-          'Wx5b,Gu,Gu,Gu,Gu,Gu');
-     Prnt('Hello World', 
-          'Wx5b:uGx5');
-     Prnt('Hello World', 
-          'WWWWWbuX5GGGGG');
-     Prnt('Hello World', 
-          'Wx5buX5Gx5');
-       These Prnt() calls would print 'Hello' the same as before but now
-         'World' would be in Bright Green on a dark blUe background.
-         These color strings would all expand to 'WbWbWbWbWbbbGuGuGuGuGu'.
+     PrintString('Hello World', 
+                 'Wx5b,Gu,Gu,Gu,Gu,Gu');
+     PrintString('Hello World', 
+                 'Wx5b:uGx5');
+     PrintString('Hello World', 
+                 'WWWWWbuX5GGGGG');
+     PrintString('Hello World', 
+                 'Wx5buX5Gx5');
+       These PrintString() calls would print 'Hello' the same as before
+         but now 'World' would be in Bright Green on a dark blUe
+         background.  These color strings would all expand to:
+           'WbWbWbWbWbbbGuGuGuGuGu'.
 
-When Background mode is ON  (ie. after FlagBkgr(1) or a ';'):
+When Background mode is ON  (ie. after FlagBackground(1) or a code
+string following the ';' [Advanced;] character):
 
    . - When the dot character is encountered in a color pair, it signifies
          that the other field (foreground or background) should be used
@@ -708,18 +837,18 @@ When Background mode is ON  (ie. after FlagBkgr(1) or a ';'):
    X - When this upper-case times character is used, it specifies that
          whichever field value preceeded it, it should be repeated the 
          number of times specified in the base64 character which follows.
-   ! - The bang character specifies that the remaining part of the
-         current color code line should be interpreted as if background
-         interpretation were turned OFF (as if FlagBkgr(0) had
-         been called just for this line) so further interpretation
-         proceeds like the FlagBkgr(0) section above.
+   ! - The bang (Simp!) character specifies that the remaining part of
+         the current color code line should be interpreted as if
+         background interpretation were turned OFF (as if
+         FlagBackground(0) had been called just for this line) so further
+         interpretation proceeds like the FlagBackground(0) section above.
 
    Some Examples:
      typical color pairs code string: 'WbWbWbGuGuGuGuGpGpGpYgYgYgYg'
        means 3 source characters should be Bright White  on black,
              4 source characters should be Bright Green  on blue,
              3 source characters should be Bright Green  on purple,
-         &&  4 source characters should be Bright Yellow on green.
+        and  4 source characters should be Bright Yellow on green.
      same result using (.)    : 'W.bbb.G.uuuuppp.Y.gggg'
      same result using (x)    : 'Wbx3Gux4Gpx3Ygx4'
      same result using (X)    : 'WX3bbbGX7uuuupppYX4gggg'
@@ -732,7 +861,12 @@ When Background mode is ON  (ie. after FlagBkgr(1) or a ';'):
       'WX4upcw'               =>  'WuWpWcWw'  # W X 4 -> upcw
       'WoX4RGU'               =>  'WoRoGoUo'  # Wo + o X 3 -> RGU
 
-I have tried to make Simp very simple to use yet still flexible && 
+If a color code string is terminated with a dollar ($) character,
+this tells PrintString() and DrawWindow() that the string is 
+already fully expanded and to forego passing the string to 
+ExpandColorCodeString().
+
+I have tried to make Simp very simple to use yet still flexible &&
 powerful.  Please feel free to e-mail me any suggestions || coding 
 tips || notes of appreciation like "I appreciate you!  I like to say 
 appreciate.  You can say it too.  Go on.  Say it.  Say 'I appreciate 
@@ -744,6 +878,17 @@ Say "..."'"  Thank you.  It's like app-ree-see-ate.  TTFN.
 Revision history for Perl extension Curses::Simp:
 
 =over 4
+
+=item - 1.0.41V0L3a  Sat Jan 31 00:21:03:36 2004
+
+* made verbose accessor names like VerboseName instead of verbose_name,
+    updated POD to use VerboseNames instead of 4-letter names &&
+    removed most '&&', made Text('1' => 'new line') use Prnt nstd of
+    Draw for efficiency, made ShokScrn not blank the screen so often,
+    made GetK return detected KEY_ names in normal mode, added CURSES
+    KEY MODE section && made both key modes return -1 if $tmot reached,
+    fixed ShokScrn overlap && DelW bugs, wrote support for VerboseName
+    hash keys, made flag accessors without ^Flag
 
 =item - 1.0.41O4516  Sat Jan 24 04:05:01:06 2004
 
@@ -772,7 +917,7 @@ Please run:
 
     `perl -MCPAN -e "install Curses::Simp"`
 
-or uncompress the package && run the standard:
+or uncompress the package and run the standard:
 
     `perl Makefile.PL; make; make test; make install`
 
@@ -780,18 +925,18 @@ or uncompress the package && run the standard:
 
 Curses::Simp requires:
 
-  Carp                to allow errors to croak() from calling sub
-  Curses              provides core screen && input handling
-  Math::BaseCnv       to handle number-base conversion
+  L<Carp>                to allow errors to croak() from calling sub
+  L<Curses>              provides core screen and input handling
+  L<Math::BaseCnv>       to handle number-base conversion
 
 Curses::Simp uses (if available):
 
-  Time::Frame         to provide another mechanism for timing
+  L<Time::Frame>         to provide another mechanism for timing
 
 =head1 LICENSE
 
 Most source code should be Free!
-  Code I have lawful authority over is && shall be!
+  Code I have lawful authority over is and shall be!
 Copyright: (c) 2003, Pip Stuart.  All rights reserved.
 Copyleft :  I license this software under the GNU General Public
   License (version 2).  Please consult the Free Software Foundation
@@ -810,7 +955,7 @@ use Carp;
 use Curses;
 use Math::BaseCnv qw(:all);
 my $fram = eval("use Time::Frame; 1") || 0;
-our $VERSION     = '1.0.41O4516'; # major . minor . PipTimeStamp
+our $VERSION     = '1.0.41V0L3a'; # major . minor . PipTimeStamp
 our $PTVR        = $VERSION; $PTVR =~ s/^\d+\.\d+\.//; # strip major && minor
 # See http://Ax9.Org/pt?$PTVR && `perldoc Time::PT`
 
@@ -1060,72 +1205,72 @@ my @_attrnamz = ();     my %_attrdata = ();
          my %_verbose_attribute_names = ();
 # field data
 push(@_attrnamz, '_wind'); $_attrdata{$_attrnamz[-1]} = 0; # CursesWindowHandle
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_handle';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowHandle';
 push(@_attrnamz, '_text'); $_attrdata{$_attrnamz[-1]} = []; # text  data
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'text_data';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'TextData';
 push(@_attrnamz, '_colr'); $_attrdata{$_attrnamz[-1]} = []; # color data
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'color_data';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'ColorData';
 push(@_attrnamz, '_hite'); $_attrdata{$_attrnamz[-1]} = 0;  # window height
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_height';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowHeight';
 push(@_attrnamz, '_widt'); $_attrdata{$_attrnamz[-1]} = 0;  # window width
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_width';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowWidth';
 push(@_attrnamz, '_yoff'); $_attrdata{$_attrnamz[-1]} = 0;  # window y-offset
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_y_offset';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowYOffset';
 push(@_attrnamz, '_xoff'); $_attrdata{$_attrnamz[-1]} = 0;  # window x-offset
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_x_offset';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowXOffset';
 push(@_attrnamz, '_ycrs'); $_attrdata{$_attrnamz[-1]} = 0;  # cursor y-offset
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'cursor_y_offset';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'CursorYOffset';
 push(@_attrnamz, '_xcrs'); $_attrdata{$_attrnamz[-1]} = 0;  # cursor x-offset
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'cursor_x_offset';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'CursorXOffset';
 push(@_attrnamz, '_btyp'); $_attrdata{$_attrnamz[-1]} = 0;    # border type
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_border_type';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowBorderType';
 push(@_attrnamz, '_bclr'); $_attrdata{$_attrnamz[-1]} = '!w'; # border color
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_border_color';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowBorderColor';
 push(@_attrnamz, '_titl'); $_attrdata{$_attrnamz[-1]} = ''; # window title
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_title';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowTitle';
 push(@_attrnamz, '_tclr'); $_attrdata{$_attrnamz[-1]} = '!W'; # title color
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'window_title_color';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'WindowTitleColor';
 push(@_attrnamz, '_dndx'); $_attrdata{$_attrnamz[-1]} = 0;    # DISPSTAK index
-            $_verbose_attribute_names{$_attrnamz[-1]} = 'display_stack_index';
+            $_verbose_attribute_names{$_attrnamz[-1]} = 'DisplayStackIndex';
 # Flags, storage Values, && extended attributes
 push(@_attrnamz, '_flagaudr'); $_attrdata{$_attrnamz[-1]} = 1; # Auto Draw()
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_auto_draw';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagAutoDraw';
 push(@_attrnamz, '_flagmaxi'); $_attrdata{$_attrnamz[-1]} = 1; # Maximize
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_maximize';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagMaximize';
 push(@_attrnamz, '_flagshrk'); $_attrdata{$_attrnamz[-1]} = 1; # ShrinkToFit
-       $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_shrink_to_fit';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagShrinkToFit';
 push(@_attrnamz, '_flagcntr'); $_attrdata{$_attrnamz[-1]} = 1; # Center
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_center';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagCenter';
 push(@_attrnamz, '_flagcvis'); $_attrdata{$_attrnamz[-1]} = 0; # CursorVisible
-       $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_cursor_visible';
+               $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagCursorVisible';
 push(@_attrnamz, '_flagscrl'); $_attrdata{$_attrnamz[-1]} = 0; # Scrollbar
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_scrollbar';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagScrollbar';
 push(@_attrnamz, '_flagsdlk'); $_attrdata{$_attrnamz[-1]} = 0; # SDLK
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_sdl_key';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagSDLKey';
 push(@_attrnamz, '_flagbkgr'); $_attrdata{$_attrnamz[-1]} = 0; # background
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_background';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagBackground';
 push(@_attrnamz, '_flagfram'); $_attrdata{$_attrnamz[-1]} = 0; # Time::Frame
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_time_frame';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagTimeFrame';
 push(@_attrnamz, '_flagmili'); $_attrdata{$_attrnamz[-1]} = 0; # millisecond
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_millisecond';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagMillisecond';
 push(@_attrnamz, '_flagprin'); $_attrdata{$_attrnamz[-1]} = 1; # Prnt into self
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_print_into';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagPrintInto';
 push(@_attrnamz, '_flaginsr'); $_attrdata{$_attrnamz[-1]} = 1; # insert mode
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'flag_insert_mode';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'FlagInsertMode';
 push(@_attrnamz, '_valulasp'); $_attrdata{$_attrnamz[-1]} = undef; # last pair
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'last_pair';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'LastPair';
 push(@_attrnamz, '_valullsp'); $_attrdata{$_attrnamz[-1]} = undef; # llastpair
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'last_last_pair';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'LastLastPair';
 push(@_attrnamz, '_valulasb'); $_attrdata{$_attrnamz[-1]} = undef; # last bold
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'last_bold';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'LastBold';
 push(@_attrnamz, '_valullsb'); $_attrdata{$_attrnamz[-1]} = undef; # llastbold
-                $_verbose_attribute_names{$_attrnamz[-1]} = 'last_last_bold';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'LastLastBold';
 push(@_attrnamz, '_valudol8'); $_attrdata{$_attrnamz[-1]} = undef; # do late
-              $_verbose_attribute_names{$_attrnamz[-1]} = 'late_escaped_print';
+                $_verbose_attribute_names{$_attrnamz[-1]} = 'LateEscapedPrint';
 
 # methods
-sub _default_value   { my ($self, $attr) = @_; $_attrdata{$attr}; } # Dflt vals
-sub _attribute_names { @_attrnamz; } # attribute names
+sub _default_value   { my ($self, $attr) = @_; $_attrdata{$attr}; } 
+sub _attribute_names { @_attrnamz; } #         attribute names
 
 # MkMethdz creates Simp object field accessor methods with 
 #   configurable handling && overrideable default operations.  Beppu@CPAN.Org
@@ -1134,7 +1279,8 @@ sub _attribute_names { @_attrnamz; } # attribute names
 #   NAME => name of the method to be created
 #   ARAY => if this is true, $self->{$attr} is assumed to be
 #           an array ref, and default subcommands are installed
-#   LOOP => ...
+#   LOOP => like ARAY above but a looping value instead
+#   ...  => other method flags describing what to include in made method
 #   nmrc => sub reference for handling a numeric subcommand
 # The rest of the parameters should be key/value pairs where:
 #   subcommand => subroutine reference
@@ -1163,16 +1309,19 @@ sub MkMethdz {
       $self->{'_chgd'} = 1;
     }
   };
+  $cmnd{'assign'} ||= $cmnd{'asin'}; # handle normal names too =)
   $cmnd{'blnk'} ||= sub { # Dflt blank  command
     my $self = shift;
     $self->{$attr}   = '';
     $self->{'_chgd'} = 1;
   };
+  $cmnd{'blank'} ||= $cmnd{'blnk'}; # handle normal names too =)
   $cmnd{'togl'} ||= sub { # Dflt toggle command (for flags)
     my $self = shift;
     $self->{$attr}  ^= 1;
     $self->{'_chgd'} = 1;
   };
+  $cmnd{'toggle'} ||= $cmnd{'togl'}; # handle normal names too =)
   $cmnd{'true'} ||= sub { # Dflt truth command (for flags)
     my $self = shift;
     $self->{$attr}   = 1;
@@ -1183,11 +1332,12 @@ sub MkMethdz {
     $self->{$attr}   = 0;
     $self->{'_chgd'} = 1;
   };
+  $cmnd{'false'} ||= $cmnd{'fals'}; # handle normal names too =)
   $cmnd{'incr'} ||= sub { # Dflt increment command
     my $self = shift; my $amnt = shift || 1;
     if(!$dstk || $self->{'_dndx'} < $#DISPSTAK) {
       if($dstk) { # exchange display stack indices 
-        $DISPSTAK[ $self->{'_dndx'} + 1]->{'_dndx'}--;
+        ${$DISPSTAK[ $self->{'_dndx'} - 1]}->{'_dndx'}--;
         ($DISPSTAK[$self->{'_dndx'}    ], $DISPSTAK[$self->{'_dndx'} + 1]) =
         ($DISPSTAK[$self->{'_dndx'} + 1], $DISPSTAK[$self->{'_dndx'}    ]);
       }
@@ -1195,11 +1345,12 @@ sub MkMethdz {
       $self->{'_chgd'} = 1;
     }
   };
+  $cmnd{'increase'} ||= $cmnd{'incr'}; # handle normal names too =)
   $cmnd{'decr'} ||= sub { # Dflt decrement command
     my $self = shift; my $amnt = shift || 1;
     if(!$dstk || $self->{'_dndx'}) {
       if($dstk) { # exchange display stack indices 
-        $DISPSTAK[ $self->{'_dndx'} - 1]->{'_dndx'}++;
+        ${$DISPSTAK[ $self->{'_dndx'} - 1]}->{'_dndx'}++;
         ($DISPSTAK[$self->{'_dndx'}    ], $DISPSTAK[$self->{'_dndx'} - 1]) =
         ($DISPSTAK[$self->{'_dndx'} - 1], $DISPSTAK[$self->{'_dndx'}    ]);
       }
@@ -1207,24 +1358,26 @@ sub MkMethdz {
       $self->{'_chgd'} = 1;
     }
   };
+  $cmnd{'decrease'} ||= $cmnd{'decr'}; # handle normal names too =)
   if($aray) { # default commands for when $self->{$attr} is an array ref 
     $cmnd{'push'} ||= sub { # Dflt push
       my $self = shift;
       push(@{$self->{$attr}}, shift);
       $self->{'_chgd'} = 1;
     };
-    $cmnd{'pop'}  ||= sub { # Dflt pop
+    $cmnd{'popp'}  ||= sub { # Dflt pop
       my $self = shift;
       pop(@{$self->{$attr}});
       $self->{'_chgd'} = 1;
     };
-    $cmnd{'popp'} ||= $cmnd{'pop'}; # handle 4ltr popp tooo =)
+    $cmnd{'pop'} ||= $cmnd{'popp'}; # handle normal names too =)
     $cmnd{'apnd'} ||= sub { # Dflt append to last line
       my $self = shift;
       if(@{$self->{$attr}}) { $self->{$attr}->[-1] .= shift;  }
       else                  { push(@{$self->{$attr}}, shift); }
       $self->{'_chgd'} = 1;
     };
+    $cmnd{'append'} ||= $cmnd{'apnd'}; # handle normal names too =)
     $cmnd{'dupl'} ||= sub { # Dflt duplicate last line or some line #
       my $self = shift; my $lndx = shift || -1;
       if(@{$self->{$attr}}) { 
@@ -1234,6 +1387,7 @@ sub MkMethdz {
       }
       $self->{'_chgd'} = 1;
     };
+    $cmnd{'duplicate'} ||= $cmnd{'dupl'}; # handle normal names too =)
     $cmnd{'size'} ||= sub { # return array size
       my $self = shift; return(scalar(@{$self->{$attr}}));
     };
@@ -1246,11 +1400,19 @@ sub MkMethdz {
       my ($self, $keey, $valu) = @_;
       if(defined($valu)) { # value exists to be assigned
         $self->{$attr}->[$keey] = $valu;
-        $self->{'_chgd'} = 1;
+        if($attr =~ /^text/i && $self->{'_flagaudr'}) {
+          # new Prnt() just changing line
+          $self->Prnt('text' => $valu, 'prin' => 0,
+                      'yoff' => $keey, 'xoff' => 0);
+        } else {
+          # old array element assignment with full AutoDraw
+          $self->{'_chgd'} = 1;
+        }
       } else { # just return array line
         return($self->{$attr}->[$keey]);
       }
     };
+    $cmnd{'numeric'} ||= $cmnd{'nmrc'}; # handle normal names too =)
   } else {
     $cmnd{'nmrc'} ||= sub { # Dflt nmrc for non-arrays
       my ($self, $keey, $valu) = @_;
@@ -1269,6 +1431,7 @@ sub MkMethdz {
         }
       }
     };
+    $cmnd{'numeric'} ||= $cmnd{'nmrc'}; # handle normal names too =)
   }
   if($loop) { # default commands for when $self->{$attr} is a loop
     $cmnd{'next'} ||= sub { # Dflt next
@@ -1283,11 +1446,12 @@ sub MkMethdz {
       $self->{$attr} = @BORDSETS if($self->{$attr} < 0);
       $self->{'_chgd'} = 1;
     };
+    $cmnd{'previous'} ||= $cmnd{'prev'}; # handle normal names too =)
   }
   { # block to isolate no strict where closure gets defined
     no strict 'refs';
     *{$meth} = sub {
-      my $self = shift; my ($keey, $valu);
+      my $self = shift; my ($keey, $valu); my $foun;
       while(@_) {
         ($keey, $valu) = (shift, shift);
         if     ($keey =~ /\d+$/) { # call a special sub for numeric keyz 
@@ -1299,15 +1463,28 @@ sub MkMethdz {
           $self->{'_chgd'} = 1;
         } elsif($keey eq lc($meth)) { # same as 'asin' with meth name instead
           $self->{"_$keey"} = $valu;
-        } else {
-          croak "!*EROR*! Curses::Simp::$meth key:$keey was not recognized!\n";
+        } else { # match && update any attributes accepted by new()
+          $foun = 0;
+          foreach my $attr ( $self->_attribute_names() ) { 
+            if     ($attr =~ /$keey/i ||
+                    $_verbose_attribute_names{$attr} eq $keey) { # exact match
+              $self->{$attr} = $valu;
+              $foun = 1;
+            }
+          }
+          unless($foun) {
+            croak "!*EROR*! Curses::Simp::$meth key:$keey was not recognized!\n";
+#            $keey =~ s/^_*/_/; # auto-add unfound
+#            $self->{$keey} = $valu; 
+          }
         }
       }
-      $self->{$attr} = $self->ExpandCC($self->{$attr})      if($excc);
-      curs_set($self->{'_flagcvis'})                        if($curs);
-      ($self->{'_flagmaxi'}, $self->{'_flagshrk'}) = (0, 0) if($rsiz);
-      ($self->{'_flagmaxi'}, $self->{'_flagcntr'}) = (0, 0) if($mvwn);
-       $self->Move()                                        if($mvcr);
+      $self->{$attr} = $self->ExpandCC($self->{$attr}) . '$' if($excc &&
+                                              $self->{$attr} !~ /\$$/);
+      curs_set($self->{'_flagcvis'})                         if($curs);
+      ($self->{'_flagmaxi'}, $self->{'_flagshrk'}) = (0, 0)  if($rsiz);
+      ($self->{'_flagmaxi'}, $self->{'_flagcntr'}) = (0, 0)  if($mvwn);
+       $self->Move()                                         if($mvcr);
       if   ($self->{'_chgd'} && $self->{'_flagaudr'}) { $self->Draw(); }
       elsif($mvwn || $updt)                           { $self->Updt(); }
       elsif($rsiz)                                    { $self->Rsiz(); }
@@ -1316,6 +1493,11 @@ sub MkMethdz {
     };
     # also define verbose names as alternate accessor methods
     *{$_verbose_attribute_names{$attr}} = \&{$meth};
+    #   ... and if the method is a Flag accessor, provide with out /^Flag/
+    if($meth =~ /^Flag/) {
+      my $flgm = $meth; $flgm =~ s/^Flag//;
+      *{$flgm} = \&{$meth};
+    }
   }
 }
 
@@ -1404,6 +1586,8 @@ sub ExpandCC { # fill out abbreviations in color code strings
   my $self = shift; my $ccod = shift; my $bkgd = shift; 
   my @mtch; my @chrz; my $btai;
   $bkgd = $self->{'_flagbkgr'} unless(defined $bkgd);
+  $ccod =~ s/\$(.)/$1/g; # strip all non-terminating dollars
+  return($ccod) if($ccod =~ /\$$/); # return right away if '$' terminated
   if($bkgd) { # expand color code pairs including background
     $btai = $1 if($ccod =~ s/$GLBL{'CHARSIMP'}(.+)$//);
     $ccod =~ s/$GLBL{'CHARADVN'}//g;
@@ -1518,9 +1702,37 @@ sub ExpandCC { # fill out abbreviations in color code strings
 }
 
 sub ShokScrn { # shock (redraw) the entire screen && all windows in order
-  my $self = shift; # clear() every time? or just with flag?
-  my ($ycrs, $xcrs);
-  clear() if(shift);  touchwin(); refresh();
+  my $self = shift; my ($ycrs, $xcrs); my $slvl = 0;
+  my ($keey, $valu); my $foun;
+  while(@_) { # load key/vals like new()
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if     ($attr =~ /$keey/i ||
+                $_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $self->{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        if($keey =~ /slvl/i) {
+          $slvl = $valu;
+        } else {
+          croak "!*EROR*! Curses::Simp::ShokScrn key:$keey was not recognized!\n";
+#        $keey =~ s/^_*/_/; # auto-add unfound
+#        $self->{$keey} = $valu; 
+        }
+      }
+    } else {
+      $slvl = $keey;
+    }
+  }
+  if($slvl > 0) {
+    if($slvl > 1) {
+      if($slvl > 2) {
+        clear();    }
+      touchwin(); }
+    refresh();  }
   foreach(@DISPSTAK) {
     ${$_}->{'_wind'}->touchwin();
 #    ${$_}->Move(); # just Move()?
@@ -1541,7 +1753,7 @@ sub ShokScrn { # shock (redraw) the entire screen && all windows in order
 
 sub KNum { return %knum; }
 sub CLet { return %clet; }
-sub OScr { 
+sub OScr { # Open a new Curses Screen && setup all useful stuff
   unless($GLBL{'FLAGOPEN'}) {
     $GLBL{'FLAGOPEN'} = 1; initscr(); noecho(); nonl(); raw(); 
     start_color(); curs_set(0); keypad(1); meta(1); intrflush(0); 
@@ -1763,19 +1975,22 @@ my @knam = qw(
 #     O_BS_OVERLOAD          );
     # load $knum{CONSTANT_KEY_NUMBER_VALUE} => "CONSTANT_KEY_NAME_STRING"
     for($i = 0; $i < @kndx; $i++) { 
-      $knum{"$kndx[$i]"} = "$knam[$i]" if(defined($knam[$i])); 
-    } 
-    # add my own new additional key<->num mappings (ie. 265..276 => F1..F12)
-    for($i = 265; $i <= 276; $i++) { $knum{"$i"} = "KEY_F" . ($i-264); }
+      if(defined($knam[$i]) &&                      # not mapping -1..9 since 
+         $kndx[$i] =~ /../  && $kndx[$i] ne '-1') { # "0".."9" are normal chars
+        $knum{"$kndx[$i]"} = "$knam[$i]";           # && -1 when $tmot reached
+      }
+    }
+    # add my own new additional key<->num mappings (ie. 265..279 => F1..F15)
+    for($i = 265; $i <= 279; $i++) { $knum{"$i"} = "KEY_F" . ($i-264); }
   }
   return(); 
 }
 # Following are Curses funcs that might be useful to call in CloseScreen():
 #   termname(), erasechar(), killchar()
-sub CScr { 
+sub CScr { # Close the previously Opened Curses Screen 
   if($GLBL{'FLAGOPEN'}) { 
     $GLBL{'FLAGOPEN'} = 0; 
-    ${$DISPSTAK[0]}->DelW() while(@DISPSTAK);
+    ${$DISPSTAK[0]}->DelW() while(@DISPSTAK); # delete all simp objects first
     return(endwin()); 
   }
 }
@@ -1810,17 +2025,19 @@ sub new {
         }
       }
       unless($foun) {
-# detect non-matching verbose names here
-#        if     ($keey =~ /^t/i) {    # 'text'
-#        } elsif($keey =~ /^[la]/i) { # 'list' or 'array'
-#        } elsif($keey =~ /^h/i) {    # 'hash'
-#        } else { # unrecognized init key name
+        foreach my $attr ( $self->_attribute_names() ) { 
+          if($_verbose_attribute_names{$attr} eq $keey) { # exact match
+            $self->{$attr} = $valu;
+            $foun = 1;
+          }
+        }
+        unless($foun) {
           croak "!*EROR*! Curses::Simp::new initialization key:$keey was not recognized!\n";
-#        }
+        }
       }
     }
   }
-  $self->{'_bclr'} = $self->ExpandCC($self->{'_bclr'});
+  $self->{'_bclr'} = $self->ExpandCC($self->{'_bclr'}) . '$';
   $self->{'_flagshrk'} = 0 if($self->{'_hite'} && $self->{'_widt'});
   $self->Updt(1);
   $self->{'_wind'} = newwin($self->{'_hite'}, $self->{'_widt'}, 
@@ -1843,15 +2060,29 @@ sub new {
 sub Prnt { # Simp object PrintString method
   my $self = shift; my %parm; my ($ycrs, $xcrs); my ($keey, $valu); 
   my ($cnum, $delt, $chrz);   my ($yold, $xold); my ($fgcl, $bgcl); 
+  my $foun;
   $parm{'nore'} = 0; # No Refresh flag init'd to false
   $parm{'ycrs'} = $self->{'_ycrs'};
   $parm{'xcrs'} = $self->{'_xcrs'};
   if($self->{'_btyp'}) { $parm{'ycrs'}++; $parm{'xcrs'}++; }
   $parm{'prin'} = $self->{'_flagprin'}; # init prin param
   while(@_) { # load params
-    ($keey, $valu) = (shift, shift);
-    if(defined($valu)) { $keey =~ s/^_*//; $parm{$keey } = $valu; }
-    else               {                   $parm{'text'} = $keey; }
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if($_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $attr =~ s/^_*//; 
+          $parm{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        $keey =~ s/^_*//; 
+        $parm{$keey} = $valu; 
+      }
+    } else {
+      $parm{'text'} = $keey; 
+    }
   }
   # if text or colr are arrays like new or Draw would take, join them
   $chrz = ref($parm{'text'});
@@ -1883,7 +2114,7 @@ sub Prnt { # Simp object PrintString method
     }
   }
   if(exists($parm{'colr'})) {
-    $parm{'colr'} = $self->ExpandCC($parm{'colr'});
+    $parm{'colr'} = $self->ExpandCC($parm{'colr'}) . '$' unless($parm{'colr'} =~ /\$$/);
     if($parm{'prin'}) {
       if($self->{'_btyp'}) { 
         if($parm{'ycrs'}) { $parm{'ycrs'}--; } else { $parm{'zery'} = 1; }
@@ -1945,19 +2176,35 @@ sub Prnt { # Simp object PrintString method
   if($self->{'_btyp'}) {  $self->{'_ycrs'}--;   $self->{'_xcrs'}--; }
   if(exists($parm{'ytmp'}) || exists($parm{'xtmp'})) { 
     $self->Move($yold, $xold);
+  } elsif(!$parm{'nore'}) {
+    $self->{'_wind'}->refresh();
   }
-  $self->{'_wind'}->refresh() unless($parm{'nore'});
   return($cnum);
 }
 
 sub Draw { # Simp object self Drawing method
   my $self = shift;  my ($fgcl, $bgcl); my ($lnum, $cnum); my ($ltxt, $clin);
   my ($keey, $valu); my ($delt, $char); my ($yoff, $xoff); my ($ordc, $ordd);
-  my $dol8; my $tndx;
+  my $dol8; my $tndx; my $foun;
   while(@_) { # load key/vals like new()
-    ($keey, $valu) = (shift, shift);
-    foreach my $attr ( $self->_attribute_names() ) { 
-      $self->{$attr} = $valu if($attr =~ /$keey/i);
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if     ($attr =~ /$keey/i ||
+                $_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $self->{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        croak "!*EROR*! Curses::Simp::Draw key:$keey was not recognized!\n";
+#        $keey =~ s/^_*/_/; # auto-add unfound
+#        $self->{$keey} = $valu; 
+      }
+    } else {
+      my $reft = ref($keey);
+      if($reft eq 'ARRAY') {   $self->{'_text'}  = $keey; }
+      else                 { @{$self->{'_text'}} = split(/\n/, $keey); }
     }
   }
   $self->Updt(); 
@@ -2000,7 +2247,12 @@ sub Draw { # Simp object self Drawing method
     if((exists($self->{'_colr'}) && $self->{'_colr'} && @{$self->{'_colr'}}) ||
        $_ =~ /[ 	›œ]/) {
       if($self->{'_colr'} && defined($self->{'_colr'}->[$lnum])) {
-        $clin = $self->ExpandCC($self->{'_colr'}->[$lnum]);
+        $clin = $self->{'_colr'}->[$lnum];
+        unless($clin =~ /\$$/) { 
+          $clin =~ s/\$(.)/$1/g; # strip all non-terminating '$'
+          $clin = $self->ExpandCC($clin) . '$'; # expand && terminate
+          $self->{'_colr'}->[$lnum] = $clin;    # store back in self
+        }
       }
       for($cnum = 0; $cnum < length($ltxt); $cnum++) {
         if($cnum <= $self->{'_widt'}) {
@@ -2098,7 +2350,31 @@ sub Draw { # Simp object self Drawing method
 }
 
 sub Wait { 
-  my $self = shift; my $wait = shift || 0;
+  my $self = shift;  my $wait = 0;
+  my ($keey, $valu); my $foun;
+  while(@_) { # load key/vals like new()
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if     ($attr =~ /$keey/i ||
+                $_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $self->{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        if($keey =~ /wait/i) {
+          $wait = $valu;
+        } else {
+          croak "!*EROR*! Curses::Simp::ShokScrn key:$keey was not recognized!\n";
+#        $keey =~ s/^_*/_/; # auto-add unfound
+#        $self->{$keey} = $valu; 
+        }
+      }
+    } else {
+      $wait = $keey;
+    }
+  }
   if     ( $self->{'_flagfram'}) { # cnv from Time::Frame        to Curses ms
     $wait = Time::Frame->new($wait) unless(ref($wait) eq "Time::Frame");
     $wait = int($wait->total_frames() / 60.0 * 1000);
@@ -2109,7 +2385,33 @@ sub Wait {
 }
 
 sub GetK { 
-  my $self = shift; my $tmot = shift || 0; my $sdlk = shift || 0;
+  my $self = shift;  my $tmot = 0; my $tsdl = 0;
+  my ($keey, $valu); my $foun;
+  while(@_) { # load key/vals like new()
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if     ($attr =~ /$keey/i ||
+                $_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $self->{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        if     ($keey =~ /tmot/i || $keey eq 'Timeout') {
+          $tmot = $valu;
+        } elsif($keey =~ /tsdl/i || $keey eq 'TempSDLKey') {
+          $tsdl = $valu;
+        } else {
+          croak "!*EROR*! Curses::Simp::GetK key:$keey was not recognized!\n";
+#        $keey =~ s/^_*/_/; # auto-add unfound
+#        $self->{$keey} = $valu; 
+        }
+      }
+    } else {
+      $tmot = $keey;
+    }
+  }
   if($tmot ne '-1') {
     if     ( $self->{'_flagfram'}) { # cnv from Time::Frame        to Curses ms
       $tmot = Time::Frame->new($tmot) unless(ref($tmot) eq "Time::Frame");
@@ -2119,7 +2421,7 @@ sub GetK {
     }
   }
   timeout($tmot); 
-  if($self->{'_flagsdlk'} || $sdlk) {
+  if($self->{'_flagsdlk'} || $tsdl) {
     my $char = getch(); my $ordc = ord($char);
     foreach(@KMODNAMZ) { $self->{'_kmod'}->{$_} = 0; }
     $self->{'_kmod'}->{'KMOD_NONE'} = 1;
@@ -2128,6 +2430,7 @@ sub GetK {
       $self->{'_kmod'}->{'KMOD_SHIFT'} = 1;
       $char = lc($char);
     }
+    return($char)                          if($char eq '-1'); # $tmot reached
     return("SDLK_$char")                   if($char =~ /^[a-z0-9]$/);
     return("SDLK_$SDLKCHRM{$char}")        if(exists($SDLKCHRM{$char}));
     return("SDLK_$SDLKCRSM{$knum{$char}}") if(exists($knum{$char}) &&
@@ -2204,12 +2507,41 @@ sub GetK {
 #  'KMOD_SHIFT',          #        A Shift key is down
 #  'KMOD_ALT',            #        An Alt key is down
   } else {
-    return(getch());
+    my $char = getch(); #my $ordc = ord($char);
+    if(exists($knum{$char})) { # return "KEY_" names if exists
+      return("$knum{$char}");
+    } else {
+      return(       $char  );
+    }
   }
 }
 
 sub KMod { # accessor for the %{$self->{'_kmod'}} hash
-  my $self = shift; my $kmod = shift || 'KMOD_NONE';
+  my $self = shift;  my $kmod = 'KMOD_NONE';
+  my ($keey, $valu); my $foun;
+  while(@_) { # load key/vals like new()
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if     ($attr =~ /$keey/i ||
+                $_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $self->{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        if($keey =~ /kmod/i) {
+          $kmod = $valu;
+        } else {
+          croak "!*EROR*! Curses::Simp::KMod key:$keey was not recognized!\n";
+#        $keey =~ s/^_*/_/; # auto-add unfound
+#        $self->{$keey} = $valu; 
+        }
+      }
+    } else {
+      $kmod = $keey;
+    }
+  }
   foreach(@KMODNAMZ) {
     if(/$kmod$/i) {
       my $valu = shift;
@@ -2233,10 +2565,10 @@ sub Move { # update cursor position
   $ycrs = 0 if($ycrs < 0);
   $xcrs = 0 if($xcrs < 0);
   if($self->{'_btyp'}) { # trap cursor inside border
-    if   (($ycrs == $self->{'_hite'} - 1 &&
-           $xcrs == $self->{'_widt'} - 2) ||
-          ($ycrs == $self->{'_hite'} - 2 &&
-           $xcrs == $self->{'_widt'} - 1)) { 
+    if     (($ycrs == $self->{'_hite'} - 1 &&
+             $xcrs == $self->{'_widt'} - 2) ||
+            ($ycrs == $self->{'_hite'} - 2 &&
+             $xcrs == $self->{'_widt'} - 1)) { 
       $ycrs = ($self->{'_hite'} - 2);
       $xcrs = ($self->{'_widt'} - 2);
     } elsif(!$eflg) {
@@ -2302,7 +2634,31 @@ sub Rsiz { # update window dimensions (Resize)
 }
 
 sub Updt { # update a Simp object's dimensions (resize && mvwin)
-  my $self = shift; my $noch = shift || 0; # No Changes flag
+  my $self = shift;  my $noch = 0; # No Changes flag
+  my ($keey, $valu); my $foun;
+  while(@_) { # load key/vals like new()
+    ($keey, $valu) = (shift, shift); $foun = 0;
+    if(defined($valu)) { 
+      foreach my $attr ( $self->_attribute_names() ) { 
+        if     ($attr =~ /$keey/i ||
+                $_verbose_attribute_names{$attr} eq $keey) { # exact match
+          $self->{$attr} = $valu;
+          $foun = 1;
+        }
+      }
+      unless($foun) {
+        if($keey =~ /noch/i) {
+          $noch = $valu;
+        } else {
+          croak "!*EROR*! Curses::Simp::Updt key:$keey was not recognized!\n";
+#        $keey =~ s/^_*/_/; # auto-add unfound
+#        $self->{$keey} = $valu; 
+        }
+      }
+    } else {
+      $noch = $keey;
+    }
+  }
   my ($hite, $widt) = ($self->{'_hite'}, $self->{'_widt'});
   my ($yoff, $xoff) = ($self->{'_yoff'}, $self->{'_xoff'});
   $self->{'_wind'}->getmaxyx($hite, $widt) unless($noch);
@@ -2344,19 +2700,18 @@ sub Updt { # update a Simp object's dimensions (resize && mvwin)
   unless($noch) { # the window has been created so it's ok to change it
     $noch = 1; # reappropriate NoChanges flag to designate whether changed
     if(  $hite != $self->{'_hite'} || $widt != $self->{'_widt'}) {
-      $self->Rsiz();#{'_wind'}->resize($self->{'_hite'}, $self->{'_widt'});
+      $self->Rsiz();
+#      $self->{'_wind'}->resize($self->{'_hite'}, $self->{'_widt'});
       if($hite >  $self->{'_hite'} || $widt >  $self->{'_widt'}) { 
-        $self->ShokScrn(1); # Clear/Refresh main screen because window shrank
+        $self->ShokScrn(2); # Clear/Refresh main screen because window shrank
       }
       $noch = 0;
     }
     if($yoff != $self->{'_yoff'} || $xoff != $self->{'_xoff'}) {
       $self->{'_wind'}->mvwin( $self->{'_yoff'}, $self->{'_xoff'});
-      $self->ShokScrn(1); # Clear/Refresh main screen because window moved
+      $self->ShokScrn(2); # Clear/Refresh main screen because window moved
       $noch = 0;
     }
-  }
-  if($hite >  $self->{'_hite'} || $widt >  $self->{'_widt'} || !$noch) {
   }
   return(!$noch); # return flag telling whether self resized or moved
 }
@@ -2894,12 +3249,12 @@ sub DESTROY {
   my $self = shift || return(); my $dndx = $self->{'_dndx'};
   if($self->{'_wind'}) {
     delwin($self->{'_wind'});
-    splice(@DISPSTAK, $dndx, 1); #remove deleted from displaystack
-    for(; $dndx < @DISPSTAK; $dndx++) { 
-      if($DISPSTAK[$dndx] && %{$DISPSTAK[$dndx]}) {
-        $DISPSTAK[$dndx]->{'_dndx'}--; 
+    for(++$dndx; $dndx < @DISPSTAK; $dndx++) { 
+      if($DISPSTAK[$dndx] && exists(${$DISPSTAK[$dndx]}->{'_dndx'})) {
+        ${$DISPSTAK[$dndx]}->{'_dndx'}--; 
       }
     }
+    splice(@DISPSTAK, $self->{'_dndx'}, 1); #remove deleted from displaystack
     $self->ShokScrn();
   }
 }

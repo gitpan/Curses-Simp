@@ -51,9 +51,9 @@ my @chrz = ( {
                'mutd' => '@muted@', # sel muted chan
              }
            );
-my @optz = @dopt; my @scrn = (); my @colz = (); my $scrn;
-my %setz = ();    my %bkst = (); my %knum = ();
-my $chgr = "";    my $keey = ""; my $temp = "";
+my @optz = @dopt; my @scrn = (); my @colz = ();
+my %setz = ();    my %bkst = (); my $scrn = '';
+my $chgr = '';    my $keey = ''; my $temp = '';
 my $widt = 0;     my $hite = 0;  my $idle = 0;
 my $wich = 0;     my $mode = 0;  my $oidl = 0;
 my $mute = 0;     my $alll = 1;  my $only = 0;
@@ -76,7 +76,7 @@ sub FindChgr {
 sub DrawBarz {
   my $sndx;
 
-  %knum = $scrn->KNum(); $widt = $scrn->Widt(); $hite = $scrn->Hite();
+  $widt = $scrn->Widt(); $hite = $scrn->Hite();
   @scrn = ();     @colz = ();
   $scrn->Move(); # needed to reset cursor location for Draw bug
   foreach(@optz) {
@@ -242,21 +242,21 @@ while(!defined($keey) || (lc($keey) ne 'x' && lc($keey) ne 'q' && ord($keey) != 
   LoadSetz();
   $oidl = $idle;
   if(defined($keey)) {
-    if   (lc($keey)    eq " ") { ToglAlll(); }
-    elsif(lc($keey)    eq "b") { ToglMode(); }
-    elsif(lc($keey)    eq "m") { ToglMute(); }
-    elsif(lc($keey)    eq "a") { ToglAlll(); }
-    elsif(lc($keey)    eq "o") { ToglOnly(); }
-    elsif(lc($keey)    eq "s") { SaveValz(); }
-    elsif(   $keey     eq "l") { LoadValz(); }
-    elsif(   $keey     eq "L") { 
+    if   (lc($keey)    eq ' ') { ToglAlll(); }
+    elsif(lc($keey)    eq 'b') { ToglMode(); }
+    elsif(lc($keey)    eq 'm') { ToglMute(); }
+    elsif(lc($keey)    eq 'a') { ToglAlll(); }
+    elsif(lc($keey)    eq 'o') { ToglOnly(); }
+    elsif(lc($keey)    eq 's') { SaveValz(); }
+    elsif(   $keey     eq 'l') { LoadValz(); }
+    elsif(   $keey     eq 'L') { 
       $alll = 0; ChngBarz(); 
       $optz[@dopt] = 'line' unless($mode);
       AsinChan('line'); }
-    elsif(lc($keey)    eq "i") { ShowInfo(); }
-    elsif(lc($keey)    eq "v") { AsinChan('vol'); }
-    elsif(lc($keey)    eq "c") { AsinChan('cd'); }
-    elsif(lc($keey)    eq "p") { AsinChan('pcm'); }
+    elsif(lc($keey)    eq 'i') { ShowInfo(); }
+    elsif(lc($keey)    eq 'v') { AsinChan('vol'); }
+    elsif(lc($keey)    eq 'c') { AsinChan('cd'); }
+    elsif(lc($keey)    eq 'p') { AsinChan('pcm'); }
     elsif(   $keey     =~ /^\d$/) { # handle number keys
       if($setz{$optz[$wich]} > int($keey * 11)) {
         $setz{$optz[$wich]} = int($keey * 11);
@@ -265,32 +265,27 @@ while(!defined($keey) || (lc($keey) ne 'x' && lc($keey) ne 'q' && ord($keey) != 
     } elsif(   $keey     =~ /^[!@#\$%^&*()]$/) { # handle shifted number keys
       $setz{$optz[$wich]} = int($slut{$keey} * 11);
       ChngBarz();
-    } elsif(exists $knum{$keey}) {
-      if     ($knum{$keey} eq "KEY_LEFT")  { 
-        $setz{$optz[$wich]}-- if $setz{$optz[$wich]};
-        ChngBarz();
-      } elsif($knum{$keey} eq "KEY_RIGHT") { 
-        $setz{$optz[$wich]}++ if $setz{$optz[$wich]} < 99;
-        ChngBarz();
-      } elsif($knum{$keey} eq "KEY_HOME") { 
-        $setz{$optz[$wich]} = 0;
-        ChngBarz();
-      } elsif($knum{$keey} eq "KEY_END") { 
-#        $setz{$optz[$wich]} = 99;
-#        ChngBarz();
-      } elsif($knum{$keey} eq "KEY_UP")    { 
-        $wich = @optz if $wich == 0; $wich--;
-      } elsif($knum{$keey} eq "KEY_DOWN")  { 
-        $wich++; $wich = 0 if $wich == @optz;
-      } elsif($keey != -1)                 {
-        ShowHelp();
-      } else {
-        if($idle < 32) { $scrn->Wait(0.25); $idle += 0.25; }
-        else           { $scrn->Wait(2);    $idle += 2;    }
-      }
-    } elsif(lc($keey) ne 'x' && lc($keey) ne 'q' && ord($keey) != 27) {
-#    } elsif(lc($keey) eq 'h' || lc($keey) eq '?') {
+    } elsif($keey eq 'KEY_LEFT')  { 
+      $setz{$optz[$wich]}-- if $setz{$optz[$wich]};
+      ChngBarz();
+    } elsif($keey eq 'KEY_RIGHT') { 
+      $setz{$optz[$wich]}++ if $setz{$optz[$wich]} < 99;
+      ChngBarz();
+    } elsif($keey eq 'KEY_HOME') { 
+      $setz{$optz[$wich]} = 0;
+      ChngBarz();
+#    } elsif($keey eq 'KEY_END') { 
+#      $setz{$optz[$wich]} = 99;
+#      ChngBarz();
+    } elsif($keey eq 'KEY_UP')    { 
+      $wich = @optz if $wich == 0; $wich--;
+    } elsif($keey eq 'KEY_DOWN')  { 
+      $wich++; $wich = 0 if $wich == @optz;
+    } elsif(lc($keey) eq 'h' || lc($keey) eq '?' || $keey eq 'KEY_F1') {
       ShowHelp();
+    } elsif($keey eq '-1') {
+      if($idle < 32) { $scrn->Wait(0.25); $idle += 0.25; }
+      else           { $scrn->Wait(2);    $idle += 2;    }
     }
   }
   if($idle == $oidl) { $idle = 0; }

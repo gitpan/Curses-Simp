@@ -497,7 +497,7 @@ sub DrawCEdt { # Draws Character Editor or file Chooser if($chos)
                 substr($escr[int($i/2)], $j*$wscl, $wscl, $cech[2] x $wscl);
               }
             } else {
-#  WMsg("i/2:" . int($i/2) . " escr:" . sprintf("%8s", $escr[int($i/2)]) . " j:$j cech:$cech[1]") if(!defined $escr[int($i/2)]);
+#  $main->Mesg("i/2:" . int($i/2) . " escr:" . sprintf("%8s", $escr[int($i/2)]) . " j:$j cech:$cech[1]") if(!defined $escr[int($i/2)]);
               substr($escr[int($i/2)], $j*$wscl, $wscl, $cech[1] x $wscl);
             }
           } else {#if(int($i / $scal) * 2 == ($i / $scal) * 2) {
@@ -902,7 +902,7 @@ sub InitScal { # init some window dimensions (after current sys $chit loaded)
   if($sqtb) { $wscl = int(($widt - 48) / 8) if($wscl >= (($widt - 48) / 8)); } # 28Stat,18CTbl,2 Edt Border
   else      { $wscl = int(($widt - 64) / 8) if($wscl >= (($widt - 64) / 8)); } # 28Stat,34CTbl,2 Edt Border
   $scal = ($wscl * 3) if($scal > ($wscl * 3));
-  #WMsg("chit:$chit scal:$scal wscl:$wscl");
+  #$main->Mesg("chit:$chit scal:$scal wscl:$wscl");
 }
 
 sub CharEdit { # change the state of a character map pixel
@@ -921,7 +921,10 @@ sub CharEdit { # change the state of a character map pixel
 }
 
 sub ShowInfo {
-  WMsg(" FPal v$mjvr.$mnvr.$ptvr - by $auth
+  $main->Mesg(
+    'titl' => "$name Help Screen",
+    'mesg' => 
+" FPal v$mjvr.$mnvr.$ptvr - by $auth
  
 FPal was inspired primarily by two programs:
   0) Fonter written by Chris Monahan
@@ -935,11 +938,15 @@ me to add something for you.  I'd be glad to improve it given new
 suggestions.  Please support FSF.Org && EFF.Org.  Thanks.  TTFN.
  
                                                        -Pip
-", "$name Info Screen");
+",
+);
+  $main->ShokScrn(2);
 }
 
 sub ShowHelp {
-  WMsg(
+  $main->Mesg(
+    'titl' => "$name Help Screen",
+    'mesg' => 
 "                                Global Keys:
 f     - edit Fonts                   :  p     - edit Pals
 n     - Next mode (toggle Font/Pal)
@@ -966,7 +973,9 @@ r/g/b   - jump to RGB Bars
  
                                 System Stuff:
                ?/H/F1  - Help  :  I - Info  :  x/q/Esc - eXit
-", "$name Help Screen");
+",
+);
+  $main->ShokScrn(2);
 }
 
 sub IdlSleep {

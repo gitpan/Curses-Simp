@@ -3,11 +3,12 @@ use ExtUtils::MakeMaker;
 # # the contents of the Makefile that is written.
 WriteMakefile(
   'NAME'         => 'Curses::Simp',
-  'VERSION'      => '1.0.41O4516',
+  'VERSION'      => '1.0.41V0L3a',
   'ABSTRACT'     => 'a Simple Curses wrapper for easy application development',
   'AUTHOR'       => 'Pip Stuart <Pip@CPAN.Org>',
   'EXE_FILES'    => [ 
                       'bin/ptok/ptok',
+                      'bin/prym/prym',
                       'bin/qbix/qbix',
                     ],
   'PREREQ_PM'    => {

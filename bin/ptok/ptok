@@ -9,8 +9,8 @@ use strict; use Math::BaseCnv qw(:all); use Time::PT; use Curses::Simp;
 my $outp = ''; my $qiii = -1; my $parm = ''; my $sped = 0.987; my $clea = 0;
 my $barz = 0;  my @scrn = (); my @clrz = (); my @fldz; my @lasf;
 my $barh = 0; my $bilt = 0;
-my @colz = ('Gb' x 20 . ptcc('k'), #'RbobYbGuCuUuPb',
-                        ptcc('f'));#'Gu' x 27);
+my @colz = ('Gb' x 20 . ptcc('k') . 'bb', #'RbobYbGuCuUuPb',
+                        ptcc('f') . 'bb');#'Gu' x 27);
 my @limz = (63, 12, 31, 23);
 my @bclz = ('R', 'O', 'Y', 'G', 'C', 'U', 'P');
 my $colr = $colz[0];
@@ -18,8 +18,9 @@ my $simp;
 while(lc($qiii) ne 'x' && lc($qiii) ne 'q') {
   if(lc($qiii) eq 'c')  { $clea ^= 1;  } # toggle clear flag
   if(lc($qiii) eq 'b')  { # toggle bars  flag
-    if($barz ^= 1) { $simp->FlagMaxi(1); }
-    else           { $simp->Hite(1); }
+    if($barz ^= 1) { $simp->FlagMaxi(1); $sped -= 0.074 if($sped > 0.1  ); }
+    else           { $simp->Hite(1);     $sped += 0.074 if($sped > 0.026); }
+    $simp->ShokScrn(2);
     $simp->Draw();
   }
   if(lc($qiii) eq 's')  { 
@@ -51,7 +52,7 @@ while(lc($qiii) ne 'x' && lc($qiii) ne 'q') {
                               'flagbkgr' => 1);
     $barh = int(($simp->Hite() - 8) / 7) - 1;
   }
-#  $simp->{'_wind'}->clear() if($clea);
+  $simp->{'_wind'}->clear() if($clea);
   if($barz) {
     if($bilt) {
       my $blin = 'Û' x $simp->Widt();
@@ -79,13 +80,8 @@ while(lc($qiii) ne 'x' && lc($qiii) ne 'q') {
           }
           $line .= 'bb' if(length($simp->Colr('-1')) < (2 * $simp->Widt()));
           my $indx = 1 + ($i * ($barh+1));
-#          $simp->Colr("$_" => $line) foreach($indx..($indx+$barh));
-          foreach($indx..($indx + $barh)) {
-            $simp->Prnt('ycrs' => $_,    'xcrs' => 0, 'nore' => 1, 
-                        'colr' => $line, $blin);
-          }
-            $simp->Prnt('ycrs' => $indx, 'xcrs' => 0, 
-                        'colr' => $line, $blin);
+          $simp->Colr("$_" => $line) foreach($indx..($indx+$barh));
+          $simp->Draw();
         }
       }
       @lasf = @fldz;
@@ -133,7 +129,9 @@ while(lc($qiii) ne 'x' && lc($qiii) ne 'q') {
       $bilt = 1;
     }
   }
-  $simp->Prnt('ycrs' => 0, 'xcrs' => 0, 'colr' => $colr, $outp);
+  $simp->Colr('0' => $colr);
+  $simp->Text('0' => $outp);
+  $simp->Draw();
   $simp->Wait($sped) if($sped);
   $qiii = $simp->GetK();
 }

@@ -1,6 +1,12 @@
 #!/usr/bin/perl -w
 # 31B8fSs - prym created by Pip@CPAN.Org to find prime numbers for fun
 #  (as fast as I can in Perl using a sieve while saving all results)
+#
+#       -->  Press 'x' or Escape to eXit!  <--
+#
+#                  'v' toggles Visible progress
+#                  'b' toggles Base64 integers
+#
 # Desc: This was originally a UserRPL program on my HP48GX calculator
 #   called GetPrime.  I rewrote it in 4Dos batch in 1999 && had fun 
 #   with that for many hours.  Now it will be reborn in Perl under a 
@@ -11,8 +17,8 @@
 #   squares that prime number to get a new MaxCheck (MaxxCk) which 
 #   makes the percentages jump up again && descend more slowly.  If 
 #   you run `prym p` it will explode Prym.txt (which just stores deltas
-#   in bass64) into Prim.txt which will have one prime-per-line so the
-#   nth prime can be found on line n.  `prym pN` where N is a bass64 
+#   in base64) into Prim.txt which will have one prime-per-line so the
+#   nth prime can be found on line n.  `prym pN` where N is a base64 
 #   number will print the Nth prime number from Prym.txt.  Uppercase 
 #   "P" before N is the same but can be the decimal index of the prime.
 #   I've added a much faster mode where it doesn't use Curses to draw 
@@ -27,22 +33,19 @@
 #   it has made on this loop if you do this so you may want to wait 
 #   until it completes a block before breaking execution if you want 
 #   progress to be saved... blocks take about 4 minutes each to 
-#   complete on my P3-750MHz machine).  If drawing mode is on just:
-#       -->  Press "x" or Escape to exit!  <--
+#   complete on my P3-750MHz machine).
 # 2do:
-#   verify that Nth prime is correct for many N
 #   if mxck surpasses @chkz, double csiz && reload chkz
+#   use Time::PT && Frame math instead of Time::HiRes::time
 #   mk prym faster
-#   add math to PT so that prym doesn't need HiRes time
-#   cache $last for each newline as 2nd line in PDsc to speed lookups
-#   fix b64 float formatting
 #   add any new fields that might be interesting to observe
 #   add other keys
+#   cleanup code
 #   write help
-#   mk Prym newline reading same between GNU/Linux && Win32
 
 use Math::BaseCnv qw(:all);
 use Time::PT;
+use Time::HiRes;
 use Curses::Simp;
 
 my $draw = shift; $draw = 1 unless(defined $draw);
@@ -58,10 +61,10 @@ my @chkz = (); my $buff = ""; my $temp = ""; my $cand = 0; my $done = 0; my $fnd
 my $psiz = 0;  my $prev = 0;  my $pnum = 0;  my $coun = 0; my $fail = 0; my $colr;
 my $indx = 0;  my $last = 0;  my $totl = 0;  my $mxnd = 0; my $mxck = 0; my $wich;
 my $dttl = 0;  my $davg = 0;  my $time = 0;  my $otim = 0; 
-my $dwid = 1;  my $bs64 = 1;  my $dtai = 1;  my $bzip = 1; my $visi = 1;
+my $dwid = 1;  my $bs64 = 0;  my $dtai = 1;  my $bzip = 1; my $visi = 1;
 my $tttl = 0;  my $tavg = 0;  my $fwid = 0;  my $fdln;
 my $pdfl = "PDsc.txt"; my $ppfl = "Prym.txt"; my $xpfl = "Prim.txt";
-my @fdnm = ( "PipTime",   "PrmNdx",     "Size",       "Dl", "B64Prime",
+my @fdnm = ( "PipTime",  "PrymNdx",    "BfSiz",       "Dl", "PrymNumb",
                 "MxNd", "MaxxChek",   "MxDelt");
 my @fdcl = (      "Wu",       "Cb"    ,   "Uu",       "Pb",       "Gu", 
                   "Yb",       "ou",       "Rb");
@@ -75,7 +78,7 @@ if($bzip && -e $ppfl . ".bz2") { system("bunzip2 $ppfl.bz2"); }
 if($bzip && -e $pdfl . ".bz2") { system("bunzip2 $pdfl.bz2"); }
 if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth prime
   $wich = $1 || undef;
-  if(defined $wich && $bsiz =~ /^p/) { $wich = b10($wich); }
+  if(defined $wich && $draw =~ /^p/) { $wich = b10($wich); }
   if(-r $pdfl && -r $ppfl) { # read Prym
     open(PDFL, "<$pdfl");
     chomp($temp = <PDFL>);
@@ -83,9 +86,10 @@ if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth p
     ($totl, $mxnd, $mxck, $last) = split(/\s+/, $temp);
     $totl = b10($totl); $last = b10($last); 
     $mxnd = b10($mxnd); $mxck = b10($mxck);
-    $pnum = 0; $coun = 0; $done = 0; $dwid = 1;
+    $pnum = 1; $coun = 1; $done = 0; $dwid = 1;
     open(PPFL, "<$ppfl");
     open(XPFL, ">$xpfl") unless(defined $wich);
+    print XPFL "1\n"     unless(defined $wich);
     while(<PPFL>) {
       while(length($_)) {
         $_ =~ s/^(.{$dwid})//;
@@ -96,7 +100,6 @@ if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth p
           $coun++;
           if(defined $wich) { 
             if($coun == $wich) {
-#              print "Prim$wich:$pnum\n"; # verbose
               print $pnum;
               $done = 1;
               last;
@@ -209,11 +212,11 @@ if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth p
     }
     push(@scrn, $newl);
     push(@colz, $newc);
-    $otim = time unless($otim);
+    $otim = Time::HiRes::time unless($otim);
   }
   for($indx = 0; $indx < $lupz; $indx++) {
-    $buff = "";
-    if($totl == 3) { $buff = "00"; $mxnd = 2; }
+    $buff = '';
+    if($totl == 3) { $buff = '00'; $mxnd = 2; }
     $cand = $last;
     $mxck = ($chkz[$mxnd] * $chkz[$mxnd]);
     while(lc($qiii) ne "x" && lc($qiii) ne "q" && ord($qiii) != 27 && length($buff) < $bsiz) { # load buff
@@ -229,22 +232,22 @@ if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth p
       unless($fail) {
         $temp  = (($cand - $last) / 2);
         $dttl += $temp;
-        $temp  = b64($temp) if($bs64);
-        $buff .= "\n" x (length($temp) - 1) if(length($temp) - 1);
+        $temp  = b64($temp);
+        $buff .= '\n' x (length($temp) - 1) if(length($temp) - 1);
         $buff .= $temp;
+        $temp  = (($cand - $last) / 2) unless($bs64);
         $last  = $cand; 
         $totl++;
         if($draw && $dtai) {
-#          $davg = ($dttl / (($indx * $bsiz) + length($buff)))  if(($indx * $bsiz) + length($buff));
           if(($indx * $bsiz) + length($buff)) {
             $davg = ($dttl / (($indx * $bsiz) + length($buff)));
           }
-          $time = time;
+          $time = Time::HiRes::time;
           $otim = ($time - $tavg) if($otim == -1);
           $tttl += ($time - $otim) if(($time - $otim) < 4096);
           $tavg = ($tttl / (($indx * $bsiz) + length($buff)))  if(($indx * $bsiz) + length($buff));
           $newl = ""; 
-#         @fdnm = ("PipTime","PrmNdx","Size","Dl","B64Prime","MxNd","MaxxChek","MxDelt");
+#         @fdnm = ("PipTime","PrmNdx","BfSiz","Dl","B64Prime","MxNd","MaxxChek","MxDelt");
           if($bs64) {
             @fdvl = (pt, b64($totl), b64(length($buff)), $temp, b64($cand), b64($mxnd), b64($mxck),
                    b64($mxck - $cand));
@@ -262,16 +265,9 @@ if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth p
           for($fndx = 0; $fndx < @flvl; $fndx++) {
             if($flvl[$fndx] =~ /^(\d+)\.?(\d*)$/) {
               $temp = 0; $temp = $2 if(defined $2 && $2);
-              if($bs64) {
-#                $temp  = "0." . $temp;
-#                $temp *= b10( "_" x ($fwid - length($1) - 1) );
-#                substr($temp, 0, 2, ""); # strip "0."
-                $newl .= sprintf("%-${fwid}.${fwid}s", b64($1) . "," . b64($temp));
-              } else {
-                $newl .= sprintf("%-${fwid}.${fwid}s",     $1  . "." .     $temp ); # decimal
-              }
+              $newl .= sprintf("%-${fwid}.${fwid}s",     $1  . '.' .     $temp ); # decimal
             } else {
-              $newl .= " " x $fwid;
+              $newl .= ' ' x $fwid;
             }
           }
           $otim = $time;
@@ -289,24 +285,13 @@ if($draw =~ /^p(\w*)/i) { # generate Prim.txt from Prym.txt or just return Nth p
           push(@colz, $newc);
           if(@colz > $hite) { $temp = shift(@colz); shift(@colz); unshift(@colz, $temp); }
           $simp->Draw('text' => \@scrn, 'colr' => \@colz) if($visi);
-#        } elsif(int($bsiz / 16) && !(length($buff) % int($bsiz / 16))) { # frequent printing update (every 15 seconds IS more frequent than every 4 minutes)
-#          print "\nPNdx:$totl Buff:" . length($buff) . " Prim:$cand";
         }
       }
       $qiii = $simp->GetK() if($draw);
-      if(lc($qiii) eq "b") { $bs64 ^= 1; }             # toggle Bass64 view
+      if(lc($qiii) eq "b") { $bs64 ^= 1; }             # toggle Base64 view
       if(lc($qiii) eq "d") { $dtai ^= 1; $otim = -1; } # toggle Detailed view
       if(lc($qiii) eq "v") { $visi ^= 1; }             # toggle Visibility
     }
-if(0){
-    if($draw) { # For slow disk writes, show please wait message
-      unshift(@scrn, "Please Wait While Disk File is Updated...");
-      unshift(@colz, "Rb" x length($scrn[0]));
-      $simp->Draw('text' => \@scrn, 'colr' => \@colz);
-    } else {
-      print "Please Wait While Disk File is Updated...\n";
-    }
-}
     open(PDFL, ">$pdfl"); # update PrimesDescription file
     print PDFL b64($totl) . " " . b64($mxnd) . " " . b64($mxck) . " " . b64($last) . "\n";
     foreach(@chkz) { print PDFL "$_\n"; }
@@ -316,7 +301,7 @@ if(0){
     close(PPFL);
     if($draw) {
       unless($dtai) {
-        push(@scrn, "PipTime:" . pt . " DoneWithSet#:$indx Size:$bsiz UpToPrime#:$totl = $last");
+        push(@scrn, "PipTime:" . pt . " DoneWithSet#:$indx BfSiz:$bsiz UpToPrime#:$totl = $last");
         if(@scrn > $hite) { $temp = shift(@scrn); shift(@scrn); unshift(@scrn, $temp); }
         push(@colz, $fdcl[0] x 8 . $fdcl[1] x 8 . $fdcl[2] x 13 . $fdcl[3] x length($indx) . 
               $fdcl[4] x 6 . $fdcl[5] x length($bsiz) . $fdcl[6] x 12 . $fdcl[7] x length($totl) .
@@ -325,7 +310,7 @@ if(0){
         $simp->Draw('text' => \@scrn, 'colr' => \@colz);
       }
     } else {
-      print "PipTime:" . pt . " DoneWithSet#:$indx Size:$bsiz UpToPrime#:$totl = $last\n";
+      print "PipTime:" . pt . " DoneWithSet#:$indx BfSiz:$bsiz UpToPrime#:$totl = $last\n";
     }
     last if($qiii eq "x" || ord($qiii) == 27); # finish if x or Escape pressed
   }
