@@ -1,0 +1,139 @@
+#!/usr/bin/perl -w
+# 315NqwR - ptok created by Pip@CPAN.Org to be a quick && simple curses 
+#   PipTime clOcK.
+# Keyz:
+#   'F' changes format.  'S' changes update speed.  'C' clears every draw.
+#   'B' toggles visual spectrum bars
+#   'X' or 'Q' exits.
+use strict; use Math::BaseCnv qw(:all); use Time::PT; use Curses::Simp;
+my $outp = ''; my $qiii = -1; my $parm = ''; my $sped = 0.987; my $clea = 0;
+my $barz = 0;  my @scrn = (); my @clrz = (); my @fldz; my @lasf;
+my $barh = 0; my $bilt = 0;
+my @colz = ('Gb' x 20 . ptcc('k'), #'RbobYbGuCuUuPb',
+                        ptcc('f'));#'Gu' x 27);
+my @limz = (63, 12, 31, 23);
+my @bclz = ('R', 'O', 'Y', 'G', 'C', 'U', 'P');
+my $colr = $colz[0];
+my $simp;
+while(lc($qiii) ne 'x' && lc($qiii) ne 'q') {
+  if(lc($qiii) eq 'c')  { $clea ^= 1;  } # toggle clear flag
+  if(lc($qiii) eq 'b')  { # toggle bars  flag
+    if($barz ^= 1) { $simp->FlagMaxi(1); }
+    else           { $simp->Hite(1); }
+    $simp->Draw();
+  }
+  if(lc($qiii) eq 's')  { 
+    if   ($sped == 0    ) { $sped = 0.015; } # old 0.016,0.064,0.256,0.987
+    elsif($sped == 0.015) { $sped = 0.151; }
+    elsif($sped == 0.151) { $sped = 0.987; }
+    elsif($sped == 0.987) { $sped = 0    ; }
+  }
+  if(lc($qiii) eq 'f') {
+    if(length($parm)) { 
+      $parm = ''; 
+      $colr = $colz[0];
+      $simp->Colr('0' => $colr) if(defined($simp));
+    } else { 
+      $parm = 'pt'; 
+      $colr = $colz[1];
+      $simp->Colr('0' => $colr) if(defined($simp));
+    }
+  }
+  @fldz = split(//, pt()); @lasf = @fldz unless(@lasf);
+  if(length($parm)) { $outp = pt($parm); }#`pt $parm`; } 
+  else              { $outp = ' ' x 20 . join('', @fldz); }
+  unless(defined($simp)) {
+    $simp = Curses::Simp->new('text' => [ $outp ],
+                              'colr' => [ $colr ],
+                              'flagaudr' => 0,
+                              'flagcntr' => 0,
+                              'flagprin' => 0,
+                              'flagbkgr' => 1);
+    $barh = int(($simp->Hite() - 8) / 7) - 1;
+  }
+#  $simp->{'_wind'}->clear() if($clea);
+  if($barz) {
+    if($bilt) {
+      my $blin = 'Û' x $simp->Widt();
+      for(my $i = 0; $i < 7; $i++) {
+        if($lasf[$i] ne $fldz[$i]) {
+          my $strn = $bclz[$i] . 'b';
+          my $timz = int(($simp->Widt() / 64.0) * b10($fldz[$i]));
+          my $line = $strn x $timz;
+          if($i >= 4 || b10($fldz[$i]) < $limz[$i]) {
+            if($i < 4) {
+              $timz = int(($simp->Widt() / 64.0) * ($limz[$i] - b10($fldz[$i])));
+              if     ($i == 1) { # special month case
+                $line .= 'Bb' x $timz;
+              } elsif($i == 2) { # special day   case
+                $line .= 'wb' x $timz;
+              } else { # year && hour
+                $strn = lc($bclz[$i]) . 'b';
+                $line .= $strn x $timz;
+              }
+            } elsif(b10($fldz[$i]) < 59) { # min,sec,frm
+              $strn = lc($bclz[$i]) . 'b';
+              $timz = int(($simp->Widt() / 64.0) * (59 - b10($fldz[$i])));
+              $line .= $strn x $timz;
+            }
+          }
+          $line .= 'bb' if(length($simp->Colr('-1')) < (2 * $simp->Widt()));
+          my $indx = 1 + ($i * ($barh+1));
+#          $simp->Colr("$_" => $line) foreach($indx..($indx+$barh));
+          foreach($indx..($indx + $barh)) {
+            $simp->Prnt('ycrs' => $_,    'xcrs' => 0, 'nore' => 1, 
+                        'colr' => $line, $blin);
+          }
+            $simp->Prnt('ycrs' => $indx, 'xcrs' => 0, 
+                        'colr' => $line, $blin);
+        }
+      }
+      @lasf = @fldz;
+    } else {
+      for(my $i = 0; $i < 7; $i++) {
+        $simp->Text('push' => 'Û' x $simp->Widt()) foreach(0..$barh);
+        my $strn = $bclz[$i] . 'b';
+        my $timz = int(($simp->Widt() / 64.0) * b10($fldz[$i]));
+        $simp->Colr('push' => $strn x $timz);
+        if($i >= 4 || b10($fldz[$i]) < $limz[$i]) {
+          if($i < 4) {
+            $timz = int(($simp->Widt() / 64.0) * ($limz[$i] - b10($fldz[$i])));
+            if     ($i == 1) { # special month case
+              $simp->Colr('apnd' => ('Bb' x $timz));
+            } elsif($i == 2) { # special day   case
+              $simp->Colr('apnd' => ('wb' x $timz));
+            } else { # year && hour
+              $strn = lc($bclz[$i]) . 'b';
+              $simp->Colr('apnd' => $strn x $timz);
+            }
+          } elsif(b10($fldz[$i]) < 59) { # min,sec,frm
+            $strn = lc($bclz[$i]) . 'b';
+            $timz = int(($simp->Widt() / 64.0) * (59 - b10($fldz[$i])));
+            $simp->Colr('apnd' => $strn x $timz);
+          }
+        }
+        $simp->Colr('apnd' => 'bb') if(length($simp->Colr('-1')) < (2 * $simp->Widt()));
+        $simp->Colr('dupl') foreach(1..$barh);
+      }
+      $simp->Text('push' => 'The YEAR   in RED    is a spectrum from 2000 to 2063.');
+      $simp->Text('push' => 'The MONTH  in ORANGE is a spectrum from    1 to   12 (January  to December).');
+      $simp->Text('push' => 'The DAY    in YELLOW is a spectrum from    1 to   31.');
+      $simp->Text('push' => 'The HOUR   in GREEN  is a spectrum from    0 to   23 (Midnight to 11 PM).');
+      $simp->Text('push' => 'The MINUTE in CYAN   is a spectrum from    0 to   59.');
+      $simp->Text('push' => 'The SECOND in BLUE   is a spectrum from    0 to   59.');
+      $simp->Text('push' => 'The 60th   in PURPLE is a spectrum from    0 to   59.');
+      $simp->Colr('push' => $bclz[0] . 'b');
+      $simp->Colr('push' => $bclz[1] . 'b');
+      $simp->Colr('push' => $bclz[2] . 'b');
+      $simp->Colr('push' => $bclz[3] . 'b');
+      $simp->Colr('push' => $bclz[4] . 'b');
+      $simp->Colr('push' => $bclz[5] . 'b');
+      $simp->Colr('push' => $bclz[6] . 'b');
+      $simp->Draw();
+      $bilt = 1;
+    }
+  }
+  $simp->Prnt('ycrs' => 0, 'xcrs' => 0, 'colr' => $colr, $outp);
+  $simp->Wait($sped) if($sped);
+  $qiii = $simp->GetK();
+}

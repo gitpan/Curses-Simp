@@ -1,0 +1,791 @@
+ 2AFBQB7 - Curses::Simp created by Pip@CPAN.Org to vastly simplify Perl
+   text-mode application development
+ Notz: Curses color names:
+   COLOR_ BLACK,RED,GREEN,YELLOW,BLUE,MAGENTA,CYAN,WHITE 
+
+NAME
+
+Curses::Simp - a Simple Curses wrapper for easy application development
+
+VERSION
+
+This documentation refers to version 1.0.41O4516 of 
+Curses::Simp, which was released on Sat Jan 24 04:05:01:06 2004.
+
+SYNOPSIS
+
+  use Curses::Simp;
+  my $scrn = Curses::Simp->new('text' => ['1337', 'nachoz', 'w/', 'cheese' x 7]);
+  my $keey = '';
+  while($keey ne 'x') {           # wait for 'x' to eXit
+    $keey = $scrn->GetK(-1);      # get a blocking keypress
+    $scrn->Text('push' => $keey); # add new line for new key
+  } # screen automagically draws when new() && Text() are called
+
+DESCRIPTION
+
+Curses::Simp provides a curt mechanism for updating a console screen 
+with any Perl array (or two to include color codes).  Most key strokes
+can be simply obtained and tested for interface manipulation.  The goal
+was ease-of-use first && efficient rendering second.  Of course, it 
+could always benefit from being faster still.  Many Simp functions 
+can accept rather cryptic parameters to do fancier things but the most
+common case is meant to be as simple as possible (hence the name).
+The more I learn about Curses, the more functionality I intend to add...
+Feeping Creatures overcome.
+
+2DO
+
+- fix ShokScrn redrawing / overlapping bugs
+
+- optimize autodraw by using Prnt('prin' => 1) nstd of Draw() when
+          only a line chgd with like Text('1' => 'new line 1 text')
+
+- fix ptok bars screen jitters (too many touchwin refresh?)
+
+- add styles && style/blockchar increment keys to CPik
+
+- mk generic file/dir browse dialog window function: Brws
+
+- describe Simp objects sharing apps (pmix + ptok)
+          mk OScr read Simp apps @_ param list && auto-handle --geom wxh+x+y
+
+- add multi-line option to Prnt where text can split on /\n/
+
+- add multi-line option to Prmt where dtxt can split on /\n/ && ^d
+          accepts entry instead of RETURN
+
+- handle ascii chars under 32 with escapes from Prnt
+
+- optimize Draw more
+
+- imp up/dn scrollbars either internally or w/ normal Curses funcs
+
+- handle ascii chars under 32 better than current escapes if possible
+
+        if detectable:
+
+- handle xterm resize events
+
+- handle mouse input (study any existent Curses apps that use mouse 
+          input you can find ... probably in C)
+
+- Learn how to read a Shift-Tab key press if in any way 
+          distinguishable from Tab/Ctrl-I
+
+-    What else does Simp need?
+
+WHY?
+
+Curses::Simp was created because I could hardly find dox || examples 
+of Curses.pm usage so I fiddled until I could wrap the most important
+stuff (AFAIC) in names && enhanced functions which streamline what I
+want to do.
+
+USAGE
+
+B<new()> - Curses::Simp object constructor
+
+new() opens a new Curses screen if one does not exist already && 
+initializes useful default screen, color, && keys settings.  The
+created Curses screen is automagically closed on program exit.
+
+Below are available object methods.  Each of the four letter 
+abbreviated method names as well as those beginning with "Flag" 
+can be used as initialization parameters to new() if lowercased.
+An example:
+
+  my $simp = Curses::Simp->new( 'hite' => 7 ); # set 'hite' at init
+     $simp->Hite(   15 );                 # set 'hite' through Hite()
+     $simp->Height( 31 );                 # set 'hite' through Height()
+
+See the individual sections in the ACCESSOR && FLAG METHODS 
+section for more information on how to manipulate created 
+Curses::Simp objects.
+
+Most other Curses::Simp methods also accept a hash parameter which 
+loads the object fields the same as new().
+
+ExpandCC or ExpandColorCodeString($cccs)
+
+Returns the expanded form of the compressed color code string $cccs.
+
+$cccs may contain any of the special formatting characters specified in the 
+COLOR NOTES (Interpretation of Backgrounds && Repeats in Color Codes)
+section.
+
+ExpandCC() is primarily useful as an internal function to the 
+Curses::Simp package but I have exposed it because it can be useful
+to test && see how a compressed color code string would be expanded
+especially if expansion from Prnt() or Draw() are not what you expect.
+
+ShokScrn or ShockScreen([$cler])
+
+ShokScrn() forces the screen && all created Simp objects to be 
+refreshed in order.
+
+The $cler flag (default is false) can be provided to specify that
+the entire screen is to be cleared before everything refreshes.
+Clearing the entire screen usually isn't necessary.
+
+KNum or KeyNumbers
+
+Returns a hash with key    numbers  => "names".
+
+CLet or ColorLetters
+
+Returns a hash with color "letters" => numbers.
+
+NumC or NumColors
+
+Returns the number of available colors (last index: NumC()-1)
+
+Hite or Height
+
+Returns the current Simp object's window height (last index: Hite()-1)
+
+Widt or Width
+
+Returns the current Simp object's window width  (last index: Widt()-1)
+
+Prnt or PrintString($strn)
+
+Prints $strn at current cursor position.  Prnt() can also accept a hash 
+of parameters (eg. Prnt('text' => $strn)) where:
+
+  'text' => [ "String to Print" ], # or can just be string without arrayref
+  'colr' => [ "ColorCodes corresponding to text" ], # same just string optn
+  'ycrs' =>  3, # Number to move the cursor's y to before printing
+  'xcrs' =>  7, # Number to move the cursor's x to before printing
+  'yoff' => 15, # same as ycrs except original ycrs is restored afterwards
+  'xoff' => 31, # same as xcrs except original xcrs is restored afterwards
+  'prin' =>  1, # flag to specify whether printed text should update the
+                #   main Text() && Colr() data or just print to the screen
+                #   temporarily.  Default is true (ie. Print Into Text/Colr)
+
+Prnt() returns the number of characters printed.
+
+Draw or DrawWindow
+
+Draws the current Simp object with the established Text() and Colr()
+data.
+
+Draw() accepts a hash of parameters like new() which will update as
+many attributes of the Simp object as are specified by key => values.
+
+Draw() returns the number of lines printed (which is normally the
+same as Hite()).
+
+Wait or WaitTime($time)
+
+Wait() does nothing for $time seconds.
+
+$time can be an integer or floating point number of seconds.
+(eg. Wait(1.27) does nothing for just over one second).
+
+Wait() (like GetK()) can also use alternate waiting methods.
+The default $time format is integer or floating seconds.  It can
+also be a Time::Frame object or an integer of milliseconds.
+These modes can be set with the FlagFram(1) and FlagMili(1)
+methods respectively.
+
+GetK or GetKey([$tmot][,$sdlk])
+
+Returns a keypress if one is made or -1 after waiting $tmot seconds.
+
+$tmot can be an integer or floating point number of seconds.
+(eg. GetK(2.55) waits for two && one-half seconds before returning -1
+if no key was pressed).
+
+Default behavior is to not block (ie. GetK(0)).  Use GetK(-1) for a
+blocking keypress (ie. to wait indefinitely).
+
+GetK() can also use alternate waiting methods.  The default is 
+integer or floating seconds.  It can also utilize Time::Frame objects
+or integer milliseconds if preferred.  These modes can be set with
+the FlagFram(1) and FlagMili(1) methods respectively.
+
+$sdlk is a flag (default is false) which tells GetK() to return a
+verbose key string name from the list of SDLKeys in the SDLKEY NOTES
+section.
+
+The GetK() $sdlk flag parameter sets SDLKey mode temporarily
+(ie. only for a single execution of GetK()).  This mode can be
+turned on permanently via the FlagSDLK(1) function.
+
+In SDLKey mode, GetK() returns an SDLKey name from the SDLKEY NOTES
+section and sets the flags in KMod().
+
+KMod or KeyMode([$keyn][,$newv])
+
+Returns the key mode (state) of the key mode name $keyn.  $keyn
+should be one of the KMOD_ names from the bottom of the SDLKEY NOTES
+section.
+
+If no parameters are provided, the state of KMOD_NONE is returned.
+
+If $newv is provided, $keyn state is set to $newv.
+
+Move or MoveCursor([$ycrs, $xcrs])
+
+Move() updates the current Simp object's cursor position to the
+newly specified $ycrs, $xcrs.
+
+By default, the cursor is not visible but this can be changed through
+the FlagCVis() function.
+
+Returns ($ycrs, $xcrs) as the coordinates of cursor.
+
+Rsiz or ResizeWindow($hite, $widt)
+
+Rsiz() updates the current Simp object's window dimensions to the
+newly specified $hite, $widt.
+
+It may help to think of Rsiz() as a wrapper to Hite(), Widt() 
+although actually the opposite is true.
+
+Returns ($hite, $widt) as the dimensions of the window.
+
+Mesg or MessageWindow($mesg)
+
+Mesg() draws a Message Window in the center of the screen to 
+display $mesg.  Mesg() can also accept a hash of parameters 
+(eg. Mesg('mesg' => $mesg)) where:
+
+  'mesg' => "Message to Print",
+  'text' => [ "same as new \@text" ],
+  'colr' => [ "ColorCodes corresponding to mesg or text" ],
+  'titl' => "MessageWindow Title string",
+  'tclr' => "ColorCodes corresponding to titl",
+  'flagpres' => 1, # a flag specifying whether to "Press A Key"
+  'pres' => "Press A Key...", # string to append if flagpres is true
+  'pclr' => "ColorCodes corresponding to pres",
+  'wait' => 1.0, # floating number of seconds to wait
+                 #   if flagpres is true, Mesg() waits this long for
+                 #     a keypress before quitting
+                 #   if flagpres is false, Mesg() waits this long
+                 #     regardless of whether keys are pressed
+
+Returns the value of pressed key.  This can be used to make simple
+one-character prompt windows.  For example:
+
+  use Curses::Simp;
+  my $simp = Curses::Simp->new();
+  my $answ = $simp->Mesg('titl' => 'Is Simp useful?', 
+                         'mesg' => '(Yes/No)', 
+                         'pres' => '');
+             $simp->Mesg('titl' => 'Answer:', $answ);
+     # ... or another way ...
+     $answ = $simp->Mesg('titl' => 'Is Simp useful?',
+                         'pres' => '(Yes/No)');
+             $simp->Mesg('titl' => 'Answer:', $answ);
+
+Prmt or PromptWindow(\$dref)
+
+Prmt() draws a Prompt Window in the center of the screen to 
+display && update the value of $dref.  \$dref should be a 
+reference to a variable containing a string you want edited or
+replaced.  Prmt() can also accept a hash of parameters 
+(eg. Prmt('dref' => \$dref)) where:
+
+  'dref' => \$dref, # Default Reference to variable to be read && edited
+  'dtxt' => "Default Text string in place of dref",
+  'dclr' => "ColorCodes corresponding to dref/dtxt",
+  'hclr' => "ColorCodes corresponding to the highlighted (unedited) dref/dtxt",
+  'text' => [ "same as new \@text" ],
+  'colr' => [ "ColorCodes corresponding to mesg or text" ],
+  'hite' =>  3, # height of the prompt window (including borders)
+  'widt' => 63, # width  of the prompt window (including borders)
+  'titl' => "MessageWindow Title string",
+  'tclr' => "ColorCodes corresponding to titl",
+  'flagcvis' => 1, # a flag specifying whether the cursor should be displayed
+
+CPik or ColorPickWindow
+
+CPik() is a simple Color Picker window.
+
+It accepts arrow keys to highlight a particular color && enter to select.
+The letter corresponding to the color or the number of the index can also
+be pressed instead.
+
+Returns the letter of the picked color.
+
+DESTROY or DelW or DeleteWindow
+
+DelW() deletes all the components of the created Simp object and calls
+ShokScrn() to cause the screen && all other created objects to be redrawn.
+
+ACCESSOR && FLAG METHODS
+
+Simp accessor && flag object methods have related interfaces as they
+each access && update a single component field of Curses::Simp objects.  Each
+one always returns the value of the field they access.  Thus if you want
+to obtain a certain value from a Simp object, just call the accessor
+method with no parameters.  If you provide parameters, the field will
+be updated && will return its new value.
+
+All of these methods accept a default parameter of their own type or
+a hash of operations to perform on their field.
+
+Some operations are only applicable to a subset of the methods as 
+dictated by the field type.  The available operations are:
+
+   Key   =>   Value Type  ... # Purpose
+  -----      ------------ 
+  'asin' =>  $scalar (number|string|arrayref)
+  # this context-sensitive assignment loads the field
+  'blnk' =>  $ignored         # blanks a string value
+  'togl' =>  $ignored         # toggles    a flag value
+  'true' =>  $ignored         # trues      a flag value
+  'fals' =>  $ignored         # falsifies  a flag value
+  'incr' =>  $numeric_amount  
+  # increments if no $num is provided or increases by $num
+  'decr' =>  $numeric_amount  
+  # decrements if no $num is provided or decreases by $num
+  'nmrc' =>  $string          
+  # instead of an explicit 'nmrc' hash key, this means the
+  #   key is an entirely numeric string like '1023'
+  #   so the value gets assigned to that element when the 
+  #   field is an array.  The key is assigned directly if
+  #   the field is numeric or a string.
+  # ARRAY-SPECIFIC operations:
+  'size' => $ignored                # return the array size
+  'push' => $scalar (number|string) # push new value
+  'popp' => $ignored                # pop last value
+  'apnd' => $scalar (number|string) # append to last element
+  'dupl' => $number                 # duplicate last line or
+                                    #   $num line if provided
+  'data' => $arrayref               # assigns the array if
+                                    #   $arrayref provided &&
+                                    #   returns ALL array data
+  # LOOP-SPECIFIC operations:
+  'next' => $ignored          # assign to next     in loop
+  'prev' => $ignored          # assign to previous in loop
+
+Array Accessors
+
+  Text # update the text  array
+  Colr # update the color array
+
+Loop Accessors
+
+  BTyp # loop through border types
+
+Normal Accessors
+
+  Name             # Description
+  ----             -------------
+  Hite             # window height
+  Widt             # window width
+  YOff             # window y-offset position
+  XOff             # window x-offset position
+  YCrs             # window y-cursor position
+  XCrs             # window x-cursor position
+  BClr             # border color code string
+  Titl             # title string
+  TClr             # title  color code string
+  DNdx             # global display index
+
+Flag Accessors
+
+  FlagName Default # Description
+  -------- ------- -------------
+  FlagAuDr    1    # Automatic Draw() whenever Text or Colr are updated
+  FlagMaxi    1    # Maximize window
+  FlagShrk    1    # Shrink window to fit Text
+  FlagCntr    1    # Center window within entire available screen
+  FlagCVis    0    # Cursor Visible
+  FlagScrl    0    # use Scrollbars (not implemented yet)
+  FlagSDLK    0    # use advanced SDLKey mode in GetK()
+  FlagBkgr    0    # always expect background colors in color codes
+  FlagFram    0    # use Time::Frame objects  instead of float seconds
+  FlagMili    0    # use integer milliseconds instead of float seconds
+  FlagPrin    1    # Prnt() Into Text array.  If FlagPrin is false, 
+                   #   then each call to Prnt() only writes to the screen
+                   #   temporarily && will be wiped the next time the
+                   #   window behind it is updated.
+
+Accessor && Flag Method Usage Examples
+
+  #!/usr/bin/perl -w
+  use strict;
+  use Curses::Simp;
+  # create new object which gets auto-drawn with init params
+  my $simp = Curses::Simp->new('text' => [ 'hmmm', 'haha', 'whoa', 'yeah' ],
+                               'colr' => [ 'bbbB', 'bBBw', 'BwrR', 'ROYW' ],
+                               'btyp' => 1,
+                               'flagmaxi' => 0); 
+     $simp->GetK(-1);               # wait for a key press
+     $simp->Text('push' => 'weee'); # add more to the Text
+     $simp->Colr('push' => 'WwBb'); #              && Colr arrays
+     $simp->FlagMaxi('togl');       # toggle  the maximize flag
+     $simp->GetK(-1);               # wait for a key press
+     $simp->Text('2'    => 'cool'); # change index two elements of Text
+     $simp->Colr('2'    => 'uUCW'); #                           && Colr
+     $simp->FlagMaxi('fals');       # falsify the maximize flag
+     $simp->GetK(-1);               # wait for a key press
+     $simp->Text('popp');           # pop the last elements off Text
+     $simp->Colr('popp');           #                        && Colr
+     $simp->BTyp('incr');           # increment the border type
+     $simp->GetK(-1);               # wait for a key press
+     $simp->Text('asin' => [ 'some', 'diff', 'rent', 'stuf' ]);
+     $simp->Colr('asin' => [ 'GGYY', 'CCOO', 'UURR', 'WWPP' ]);
+     $simp->BTyp('incr');           # increment the border type
+     $simp->GetK(-1);               # wait for a key press before quitting
+
+SDLKEY NOTES
+
+The GetK() function has a special advanced mode of input.  Instead of 
+returning the plain keypress (eg. 'a'), the $sdlk flag parameter can 
+be set to true for temporary SDLKey mode or with FlagSDLK(1) for
+permanence so that verbose strings of SDLKey names will be returned 
+instead (eg. 'SDLK_a').
+
+The list of returnable SDLKey names are:
+
+   SDLKey           ASCII value    Common name
+  ----------------  -----------   ------------
+  'SDLK_BACKSPACE',      #'\b'    backspace
+  'SDLK_TAB',            #'\t'    tab
+  'SDLK_CLEAR',          #        clear
+  'SDLK_RETURN',         #'\r'    return
+  'SDLK_PAUSE',          #        pause
+  'SDLK_ESCAPE',         #'^['    escape
+  'SDLK_SPACE',          #' '     space
+  'SDLK_EXCLAIM',        #'!'     exclaim
+  'SDLK_QUOTEDBL',       #'"'     quotedbl
+  'SDLK_HASH',           #'#'     hash
+  'SDLK_DOLLAR',         #'$'     dollar
+  'SDLK_AMPERSAND',      #'&'     ampersand
+  'SDLK_QUOTE',          #'''     quote
+  'SDLK_LEFTPAREN',      #'('     left parenthesis
+  'SDLK_RIGHTPAREN',     #')'     right parenthesis
+  'SDLK_ASTERISK',       #'*'     asterisk
+  'SDLK_PLUS',           #'+'     plus sign
+  'SDLK_COMMA',          #','     comma
+  'SDLK_MINUS',          #'-'     minus sign
+  'SDLK_PERIOD',         #'.'     period
+  'SDLK_SLASH',          #'/'     forward slash
+  'SDLK_0',              #'0'     0
+  'SDLK_1',              #'1'     1
+  'SDLK_2',              #'2'     2
+  'SDLK_3',              #'3'     3
+  'SDLK_4',              #'4'     4
+  'SDLK_5',              #'5'     5
+  'SDLK_6',              #'6'     6
+  'SDLK_7',              #'7'     7
+  'SDLK_8',              #'8'     8
+  'SDLK_9',              #'9'     9
+  'SDLK_COLON',          #':'     colon
+  'SDLK_SEMICOLON',      #';'     semicolon
+  'SDLK_LESS',           #'<'     less-than sign
+  'SDLK_EQUALS',         #'='     equals sign
+  'SDLK_GREATER',        #'>'     greater-than sign
+  'SDLK_QUESTION',       #'?'     question mark
+  'SDLK_AT',             #'@'     at
+  'SDLK_LEFTBRACKET',    #'['     left bracket
+  'SDLK_BACKSLASH',      #'\'     backslash
+  'SDLK_RIGHTBRACKET',   #']'     right bracket
+  'SDLK_CARET',          #'^'     caret
+  'SDLK_UNDERSCORE',     #'_'     underscore
+  'SDLK_BACKQUOTE',      #'`'     grave
+  'SDLK_a',              #'a'     a
+  'SDLK_b',              #'b'     b
+  'SDLK_c',              #'c'     c
+  'SDLK_d',              #'d'     d
+  'SDLK_e',              #'e'     e
+  'SDLK_f',              #'f'     f
+  'SDLK_g',              #'g'     g
+  'SDLK_h',              #'h'     h
+  'SDLK_i',              #'i'     i
+  'SDLK_j',              #'j'     j
+  'SDLK_k',              #'k'     k
+  'SDLK_l',              #'l'     l
+  'SDLK_m',              #'m'     m
+  'SDLK_n',              #'n'     n
+  'SDLK_o',              #'o'     o
+  'SDLK_p',              #'p'     p
+  'SDLK_q',              #'q'     q
+  'SDLK_r',              #'r'     r
+  'SDLK_s',              #'s'     s
+  'SDLK_t',              #'t'     t
+  'SDLK_u',              #'u'     u
+  'SDLK_v',              #'v'     v
+  'SDLK_w',              #'w'     w
+  'SDLK_x',              #'x'     x
+  'SDLK_y',              #'y'     y
+  'SDLK_z',              #'z'     z
+  'SDLK_DELETE',         #'^?'    delete
+  'SDLK_KP0',            #        keypad 0
+  'SDLK_KP1',            #        keypad 1
+  'SDLK_KP2',            #        keypad 2
+  'SDLK_KP3',            #        keypad 3
+  'SDLK_KP4',            #        keypad 4
+  'SDLK_KP5',            #        keypad 5
+  'SDLK_KP6',            #        keypad 6
+  'SDLK_KP7',            #        keypad 7
+  'SDLK_KP8',            #        keypad 8
+  'SDLK_KP9',            #        keypad 9
+  'SDLK_KP_PERIOD',      #'.'     keypad period
+  'SDLK_KP_DIVIDE',      #'/'     keypad divide
+  'SDLK_KP_MULTIPLY',    #'*'     keypad multiply
+  'SDLK_KP_MINUS',       #'-'     keypad minus
+  'SDLK_KP_PLUS',        #'+'     keypad plus
+  'SDLK_KP_ENTER',       #'\r'    keypad enter
+  'SDLK_KP_EQUALS',      #'='     keypad equals
+  'SDLK_UP',             #        up arrow
+  'SDLK_DOWN',           #        down arrow
+  'SDLK_RIGHT',          #        right arrow
+  'SDLK_LEFT',           #        left arrow
+  'SDLK_INSERT',         #        insert
+  'SDLK_HOME',           #        home
+  'SDLK_END',            #        end
+  'SDLK_PAGEUP',         #        page up
+  'SDLK_PAGEDOWN',       #        page down
+  'SDLK_F1',             #        F1
+  'SDLK_F2',             #        F2
+  'SDLK_F3',             #        F3
+  'SDLK_F4',             #        F4
+  'SDLK_F5',             #        F5
+  'SDLK_F6',             #        F6
+  'SDLK_F7',             #        F7
+  'SDLK_F8',             #        F8
+  'SDLK_F9',             #        F9
+  'SDLK_F10',            #        F10
+  'SDLK_F11',            #        F11
+  'SDLK_F12',            #        F12
+  'SDLK_F13',            #        F13
+  'SDLK_F14',            #        F14
+  'SDLK_F15',            #        F15
+  'SDLK_NUMLOCK',        #        numlock
+  'SDLK_CAPSLOCK',       #        capslock
+  'SDLK_SCROLLOCK',      #        scrollock
+  'SDLK_RSHIFT',         #        right shift
+  'SDLK_LSHIFT',         #        left shift
+  'SDLK_RCTRL',          #        right ctrl
+  'SDLK_LCTRL',          #        left ctrl
+  'SDLK_RALT',           #        right alt
+  'SDLK_LALT',           #        left alt
+  'SDLK_RMETA',          #        right meta
+  'SDLK_LMETA',          #        left meta
+  'SDLK_LSUPER',         #        left windows key
+  'SDLK_RSUPER',         #        right windows key
+  'SDLK_MODE',           #        mode shift
+  'SDLK_HELP',           #        help
+  'SDLK_PRINT',          #        print-screen
+  'SDLK_SYSREQ',         #        SysRq
+  'SDLK_BREAK',          #        break
+  'SDLK_MENU',           #        menu
+  'SDLK_POWER',          #        power
+  'SDLK_EURO',           #        euro
+
+SDLKey mode also sets flags in KMod where:
+
+   SDL Modifier                    Meaning
+  --------------                  ---------
+  'KMOD_NONE',           #        No modifiers applicable
+  'KMOD_CTRL',           #        A  Control key is down
+  'KMOD_SHIFT',          #        A  Shift   key is down
+  'KMOD_ALT',            #        An Alt     key is down
+
+COLOR NOTES
+
+Colors can be encoded along with each text line to be printed.  
+Prnt() && Draw() each take hash parameters where the key should be
+'colr' && the value is a color code string as described below.
+
+A normal color code is simply a single character (typically just the
+first letter of the color name && the case [upper or lower] 
+designates high or low intensity [ie. Bold on or off]).  Simple 
+single character color codes represent only the foreground color.
+The default printing mode of color codes assumes black background
+colors for everything.  There are special ways to specify non-black
+background colors or to encode repeating color codes if you want to.
+The default to assume no background colors are specified can be
+overridden object-wide by the FlagBkgr(1) function.
+
+Normal Color Code Reference
+
+                          b(Black),  r(Red),    g(Green),  y(Yellow),
+   (upper-case = bright)  u(Blue),   p(Purple), c(Cyan),   w(White)
+
+Alternate Color Codes
+
+                          o([Orange] *Yellow),   m([Magenta]  Purple),
+   (upper-case = bright)  t([Teal]    Cyan),     l([Lavender] Purple)
+
+*Upper-Case Bright Orange Exception
+
+There is a special exception for Upper-Case 'O' (Orange).  Orange is
+actually Dark Yellow but it is often much brighter than any of the 
+other dark colors which leads to confusion.  Therefore, Upper-Case 'O'
+breaks the (upper-case = bright) rule && is interpreted the same as
+Lower-Case 'y'.  Every other color code is consistent with the rule.
+
+Interpretation of Backgrounds && Repeats in Color Codes
+
+The following mechanisms are available for changing the default color
+code string interpretation to read background colors after foreground &&
+to specify abbreviations for code repeating:
+
+The function FlagBkgr(1) will specify that you wish to have all color 
+codes interpreted expecting both foreground && background characters for
+each source text character.  Similarly, FlagBkgr(0) (which is the default
+setting of not expecting Background characters) will turn off global
+background interpretation.
+
+The base64 characters specified below are in the set [0-9A-Za-z._] &&
+are interpreted using the Math::BaseCnv module.
+
+A space in a color code string is the same as 'b' (black).
+
+When Background mode is OFF (ie. the default after FlagBkgr(0) or a '!'):
+
+   x - When this lowercase times character is used, it must be followed
+         by a base64 character which specifies how many times the color
+         code prior to the (x) times character should be repeated.
+   X - When this uppercase times character is used, it must be followed
+         by a base64 character which specifies how many times the color
+         code prior to the (X) times character should be repeated.  The
+         difference from the lowercase (x) times is that the code prior
+         to the (X) is treated as a background color for that many
+         following foreground color code characters.
+         After that, backgrounds return to black.
+   , - The comma character specifies that the next two characters are a
+         foreground && background color pair.
+         After that, backgrounds return to black.
+   : - The colon character specifies that the following character is a
+         (presumably non-black) background character to use instead of 
+         the default black for the remainder of the line (or until another
+         special character overrides this one).
+   ; - The semicolon character specifies that the remaining part of the
+         current color code line should be interpreted as if full
+         background interpretation were turned ON (as if FlagBkgr(1) had
+         been called just for this line) so further interpretation
+         proceeds like the FlagBkgr(1) section below.
+
+   Each background specification character takes effect starting with the 
+     next encountered foreground character so:
+       'RgX2UU', 'R:gUU', && 'R;Ugx2' all expand to 'RbUgUg' not 'RgUgUb'
+   Some Examples:
+     Prnt('Hello World',  # the simplest 1-to-1 text/color printing with
+          'WWWWW UUUUU'); #   all characters printed on black background
+     Prnt('Hello World', 
+          'Wx5bUx5');     # the same as above but using repeat (x) times
+       Both of the above Prnt() calls would print 'Hello' in Bright White
+         && 'World' in Bright blUe both on the default black background.
+         The color strings would expanded from 
+           'WWWWW UUUUU' or 'Wx5bUx5' to 'WbWbWbWbWbbbUbUbUbUbUb';
+     Prnt('Hello World', 
+          'Wx5b,Gu,Gu,Gu,Gu,Gu');
+     Prnt('Hello World', 
+          'Wx5b:uGx5');
+     Prnt('Hello World', 
+          'WWWWWbuX5GGGGG');
+     Prnt('Hello World', 
+          'Wx5buX5Gx5');
+       These Prnt() calls would print 'Hello' the same as before but now
+         'World' would be in Bright Green on a dark blUe background.
+         These color strings would all expand to 'WbWbWbWbWbbbGuGuGuGuGu'.
+
+When Background mode is ON  (ie. after FlagBkgr(1) or a ';'):
+
+   . - When the dot character is encountered in a color pair, it signifies
+         that the other field (foreground or background) should be used
+         for the remainder of the color code string (or until the next 
+         (.) dot character is found).
+   x - When this times character is used, it must be followed by a base64
+         character which specifies how many times the color code pair 
+         prior to the (x) times character should be repeated.
+   X - When this upper-case times character is used, it specifies that
+         whichever field value preceeded it, it should be repeated the 
+         number of times specified in the base64 character which follows.
+   ! - The bang character specifies that the remaining part of the
+         current color code line should be interpreted as if background
+         interpretation were turned OFF (as if FlagBkgr(0) had
+         been called just for this line) so further interpretation
+         proceeds like the FlagBkgr(0) section above.
+
+   Some Examples:
+     typical color pairs code string: 'WbWbWbGuGuGuGuGpGpGpYgYgYgYg'
+       means 3 source characters should be Bright White  on black,
+             4 source characters should be Bright Green  on blue,
+             3 source characters should be Bright Green  on purple,
+         &&  4 source characters should be Bright Yellow on green.
+     same result using (.)    : 'W.bbb.G.uuuuppp.Y.gggg'
+     same result using (x)    : 'Wbx3Gux4Gpx3Ygx4'
+     same result using (X)    : 'WX3bbbGX7uuuupppYX4gggg'
+     same result using hybrid : 'WbWbWbG.uX4pX3.Ygx4'
+         color code string:   =>      expands to:
+      'W.brgo'                =>  'WbWrWgWo'  # W. -> brgo
+      '.bWCPU'                =>  'WbCbPbUb'  # .b -> WCPU
+      'Wbx4'                  =>  'WbWbWbWb'  # (Wb) x 4
+      'WbRx3p'                =>  'WbRbRbRp'  # W + (bR) x 3 + p
+      'WX4upcw'               =>  'WuWpWcWw'  # W X 4 -> upcw
+      'WoX4RGU'               =>  'WoRoGoUo'  # Wo + o X 3 -> RGU
+
+I have tried to make Simp very simple to use yet still flexible && 
+powerful.  Please feel free to e-mail me any suggestions || coding 
+tips || notes of appreciation like "I appreciate you!  I like to say 
+appreciate.  You can say it too.  Go on.  Say it.  Say 'I appreciate 
+you!  I like to say appreciate.  You can say it too.  Go on.  Say it.
+Say "..."'"  Thank you.  It's like app-ree-see-ate.  TTFN.
+
+CHANGES
+
+Revision history for Perl extension Curses::Simp:
+
+- 1.0.41O4516  Sat Jan 24 04:05:01:06 2004
+
+* updated POD && added Simp projects into bin/ && MANIFEST in preparation
+    for release, made all but ptok && qbix non-executable for EXE_FILES
+
+- 1.0.41O3SQK  Sat Jan 24 03:28:26:20 2004
+
+* setup window border char sets, added SDLK advanced input option to GetK,
+    made new Mesg, Prmt, && CPik utils, added PrntInto 'flagprin' ability,
+    fixed weird char probs in Draw && removed weird char support from Prnt
+
+- 1.0.4140asO  Sun Jan  4 00:36:54:24 2004
+
+* CHANGES section && new objects created, refined Draw() && InitPair()
+
+- 1.0.37VG26k  Thu Jul 31 16:02:06:46 2003
+
+* original version
+
+INSTALL
+
+Please run:
+
+    `perl -MCPAN -e "install Curses::Simp"`
+
+or uncompress the package && run the standard:
+
+    `perl Makefile.PL; make; make test; make install`
+
+FILES
+
+Curses::Simp requires:
+
+  Carp                to allow errors to croak() from calling sub
+  Curses              provides core screen && input handling
+  Math::BaseCnv       to handle number-base conversion
+
+Curses::Simp uses (if available):
+
+  Time::Frame         to provide another mechanism for timing
+
+LICENSE
+
+Most source code should be Free!
+  Code I have lawful authority over is && shall be!
+Copyright: (c) 2003, Pip Stuart.  All rights reserved.
+Copyleft :  I license this software under the GNU General Public
+  License (version 2).  Please consult the Free Software Foundation
+  (http://www.fsf.org) for important information about your freedom.
+
+AUTHOR
+
+Pip Stuart <Pip@CPAN.Org>
+
