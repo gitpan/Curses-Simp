@@ -1,165 +1,216 @@
 //     ** XimP ** Ximp Is My Pmix - ximP yM sI pmiX ** PmiX **
-// This is a cheezy CLI /dev/mixer manipulator derived from:
+// This is a simple /dev/mixer manipulator derived from:
 //   http://www.oreilly.de/catalog/multilinux/excerpt/ch14-07.htm
-// on 11GLVFL (Tue Jan 16 21:31:15:21 2001) by Pip@CPAN.Org for Pimp
-//   ximp has almost identical behavior to `aumix` for -v#, -w#, && -q
+// on 11GLVFL (Tue Jan 16 21:31:15:21 2001) 
+//   by Pip Stuart <Pip@CPAN.Org> for pmix, pimp, ...
+// ximp has almost identical behavior to `aumix` for -v#, -w#, && -q.
+// I license this source code under the GNU General Public License v.2.
+// 2do:
+//   rewrite @argv parsing to loop for many operations like aumix
+//   add ansi colors to usag()?
 
 #include <stdio.h>
-#include <sys/ioctl.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <linux/soundcard.h>
 
-const unsigned int  mjvr     =  1;
-const unsigned int  mnvr     =  0;
-const unsigned char ptvr[8]  = "41O06H9\0";
-const char *sdevnamz[] = SOUND_DEVICE_NAMES; // avail dev namz
+const unsigned int   mjvr =  1;          // MaJor   VeRsion number
+const unsigned int   mnvr =  0;          // MiNor   VeRsion number
+const unsigned char *ptvr = "427K8A9";   // PipTime VeRsion string
+const unsigned char *auth = "Pip Stuart <Pip@CPAN.Org>"; // me =)
+const char *sdvn[] = SOUND_DEVICE_NAMES; // avail dev namz
+struct mixer_info minf;                  // Mixer Information
+int   fild,  devm,  sdvz,  recm;         // file desc, MASKS: dev, ster, rec
+int   dvic,  shwn,  shwm,  recs, setr;   // device index, show flags, recset
+int   left,  lft2,  rite,  rit2, levl;   // parameter channel values, dev lvl
+char *devn, *lstr, *rstr, *name, wich;   // devname,leftstr,ritestr,prog,which
 
-int fild, devm, sdvz;    // file descriptor, device mask, sound devices
-char *name;                // program name
+void usag() { // display command usage && exit w/ error status
+  int indx;
+  fprintf(stderr, 
+    " ximp v%d.%d.%s - by %s\n\n"
+    "usage: ximp [-]<device>\n"
+    "       ximp [-][:i][:n][:r]<device>\n"
+    "       ximp [-]<device>[+/-]<gain%%>\n"
+    "       ximp [-]<device> [+/-]<left-gain%%> [+/-]<right-gain%%>\n"
+    "       ximp [-]<device> [+/-]<left-gain%%> [+/-]<right-gain%%> <Record>\n\n"
+    "Where [?] is optional && <device> is one of:\n  all q ", 
+    mjvr, mnvr, ptvr, auth);
+  for(indx = 0; indx < SOUND_MIXER_NRDEVICES; indx++) {
+    if((1 << indx) & devm) { fprintf(stderr, "%s ", sdvn[indx]); }
+  }
+  fprintf(stderr,
+    "\nUnique abbrev. of device names work as expected.\n"
+    "  `ximp v` prints settings for 'vol'.\n"
+    "  `ximp v31` sets both left && right levels of 'vol' to 31.\n"
+    "  `ximp v+7` increases both left && right levels of 'vol' by 7.\n"
+    "  `ximp v 63 31` sets left && right levels of 'vol' to 63 && 31.\n"
+    "  `ximp c 15 15 R` sets 'cd' to be the Recording device at level 15.\n"
+    "  q as a device is a special query option for aumix interoperability.\n"
+    "  a is similar to q but it provides more information with formatting.\n"
+    "Additionally, the following flags can be prepended to the device name:\n"
+    "  :i shows detectable soundcard Info\n"
+    "  :n shows Non-working devices in a listing (`ximp :nq` or `ximp :na`)\n"
+    "  :r sets channel to Record mode for a valid input device\n");
+  exit(1);
+}
 
-void usag() {    // display command usage && exit w/ error status
-    int indx;
+void mxio(char* type) { // perform all MIXER Input/Output && test for errors
+  int stat; 
+  if       (!strcmp(type,                               "devm")) {
+    stat = ioctl(fild, SOUND_MIXER_READ_DEVMASK,        &devm);
+  } else if(!strcmp(type,                               "sdvz")) {
+    stat = ioctl(fild, SOUND_MIXER_READ_STEREODEVS,     &sdvz);
+  } else if(!strcmp(type,                               "recm")) {
+    stat = ioctl(fild, SOUND_MIXER_READ_RECMASK,        &recm);
+  } else if(!strcmp(type,                               "minf")) {
+    stat = ioctl(fild, SOUND_MIXER_INFO,                &minf);
+  } else if(!strcmp(type,                               "levl")) {
+    stat = ioctl(fild, MIXER_READ(dvic),                &levl);
+  } else if(!strcmp(type,                               "recs")) {
+    stat = ioctl(fild, MIXER_READ(SOUND_MIXER_RECSRC),  &recs);
+  } else if(!strcmp(type,                               "wlvl")) {
+    stat = ioctl(fild, MIXER_WRITE(dvic),               &levl);
+  } else if(!strcmp(type,                               "wrec")) {
+    stat = ioctl(fild, MIXER_READ(SOUND_MIXER_RECSRC),  &recs);
+    recs |=  (1 << dvic);
+//    recs &= ~(1 << dvic);
+    stat = ioctl(fild, MIXER_WRITE(SOUND_MIXER_RECSRC), &recs);
+  }
+  if(stat == -1) { perror("!*EROR*! MIXER ioctl failed!"); exit(1); }
+}
 
-    fprintf(stderr, " ximp v%d.%d.%s - by Pip Stuart <Pip@CPAN.Org>\n\n"
-                    "usage: %s [-]<device>\n"
-                    "       %s [-]<device>[+/-]<gain%%>\n"
-                    "       %s [-]<device> [+/-]<left-gain%%> [+/-]<right-gain%%>\n\n"
-                    "Where [?] is optional && <device> is one of:\n  all ", 
-                    mjvr, mnvr, ptvr, name, name, name);
-    for(indx = 0; indx<SOUND_MIXER_NRDEVICES; indx++) {
-        if((1 << indx) & devm) { fprintf(stderr, "%s ", sdevnamz[indx]); }
+void xprn(char styl) { // print the indexed device in ximp style
+  if((1 << dvic) & devm) { 
+    mxio("levl");
+    left = levl & 0xff; rite = (levl & 0xff00) >> 8; // unpack l/r
+    if(left > 99) { left = 99; } // this one does not go to eleven
+    if(rite > 99) { rite = 99; }
+    if       (styl == 'a') {   // `ximp -all` style
+      fprintf(stdout, "%08s: ", sdvn[dvic]);
+      if((1 << dvic) & sdvz) { // stereo device
+        fprintf(stdout, "%0.2d%% / %0.2d%%", left, rite);
+      } else {                 //  mono  device
+        fprintf(stdout, "   %0.2d%%   ", left);
+      }
+      if((1 << dvic) & recm) { 
+        mxio("recs");
+        fprintf(stdout, " - %c", ((1 << dvic) & recs ? 'R' : 'P'));
+      }
+    } else if(styl == 'q') {   // `aumix -q`  style
+      fprintf(stdout, "%s %d, %d", sdvn[dvic], left, rite);
+      if((1 << dvic) & recm) { 
+        mxio("recs");
+        fprintf(stdout, ", %c", ((1 << dvic) & recs ? 'R' : 'P'));
+      }
     }
-    fprintf(stderr, "\nUnique abbrev. of device names should work as well (except for 'all').\n");
-    exit(1);
+    fprintf(stdout, "\n");
+  } else if(shwn) { 
+    if       (styl == 'a') {   // `ximp -all` style
+      fprintf(stdout, "%08s: non-working mixer device\n", sdvn[dvic]);
+    } else if(styl == 'q') {   // `aumix -q`  style
+      fprintf(stdout,    "%s non-working mixer device\n", sdvn[dvic]);
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {
-    int left, lft2, rite, rit2, levl, stat, dvic, indx, ndx2, mtch;
-    char *devn, *lstr, *rstr; // mixer devname, leftstrn, ritestrn
-
-    name = argv[0]; /* save program name */
-    fild = open("/dev/mixer", O_RDONLY); // open mixer, read only
-    if(fild == -1) { perror("unable to open /dev/mixer"); exit(1); }
-    stat = ioctl(fild, SOUND_MIXER_READ_DEVMASK, &devm);
-    if(stat == -1) { perror("SOUND_MIXER_READ_DEVMASK ioctl failed"); }
-    stat = ioctl(fild, SOUND_MIXER_READ_STEREODEVS, &sdvz);
-    if(stat == -1) { perror("SOUND_MIXER_READ_STEREODEVS ioctl failed"); }
-    if(argc < 2 || argc > 4) { usag(); }    // call usage if wrong arg#
-    devn = argv[1];    // save mixer devname
-    for(indx = 0; indx < SOUND_MIXER_NRDEVICES; indx++) { // wich dvic 2 use
-        if((1 << indx) & devm) {
-            while(devn[0] == '-') { // optional -<device>
-                ndx2 = 0; while(devn[ndx2++]) { devn[ndx2-1] = devn[ndx2]; }
-            }
-            mtch = 1; ndx2 = 0;
-            if(devn[0] == 'h') { usag(); } // print usage for -help
-            if(devn[0] == 'w' && sdevnamz[indx][0] == 'p' &&
-                sdevnamz[indx][1] == 'c' &&    sdevnamz[indx][2] == 'm') {
-                ndx2 = 1;
-                break;
-            } // shortcircuit if -w for pcm
-            while((devn[ndx2] && ndx2 == 4 &&
-                    devn[0]    == 'l' && devn[1] == 'i' && 
-                    devn[2]    == 'n' && devn[3] == 'e' &&
-                    devn[ndx2] == '1') ||    // weird hack for "line1"
-    (devn[ndx2] &&     devn[ndx2] != '+' && devn[ndx2] != '-' && // && catch
-                    devn[ndx2] != '0' && devn[ndx2] != '1' && // digits
-                    devn[ndx2] != '2' && devn[ndx2] != '3' && // right
-                    devn[ndx2] != '4' && devn[ndx2] != '5' && // after
-                    devn[ndx2] != '6' && devn[ndx2] != '7' && // match
-                    devn[ndx2] != '8' && devn[ndx2] != '9')) {
-                if(devn[ndx2] != sdevnamz[indx][ndx2]) { mtch = 0; }
-                ndx2++;
-            } // loop through all of devname && serch for any !match
-            if(mtch) { break; }
-            if(devn[0] == 'a' && devn[1] == 'l' && devn[2] == 'l' && devn[3] == 0) { 
-                indx = 255; break; 
-            }    // hack for "all"
-            if(devn[0] == 'q' && devn[1] == 0) { indx = 256; break; } // "-q"
+  int indx, ndx2, mtch;
+  name = argv[0];                               // save program name
+  fild = open("/dev/mixer", O_RDONLY);          // open mixer, read only
+  if(fild == -1) { perror("!*EROR*! Unable to open /dev/mixer!"); exit(1); }
+  mxio("devm"); mxio("sdvz"); mxio("recm"); mxio("minf"); // read mixer data
+  if(argc < 2 || argc > 5) { usag(); }          // call usage if wrong arg#
+  devn = argv[1];                               // save mixer devname
+  shwn = 0; shwm = 0; setr = 0; // default don't show non-work,info,or setrec
+  for(indx = 0; indx < SOUND_MIXER_NRDEVICES; indx++) { // wich dvic 2 use
+    if((1 << indx) & devm) {                    // search for match in working
+      while(devn[0] == '-' || devn[0] == ':') { // strip leading '-' or ':'flag
+        if(devn[0] == ':') {
+          if     (devn[1] == 'i') { shwm = 1; } // show Mixer info     flag
+          else if(devn[1] == 'n') { shwn = 1; } // show Non-wrkng devs flag
+          else if(devn[1] == 'r') { setr = 1; } // set input channel to Record
+          ndx2 = 0; while(devn[ndx2++]) { devn[ndx2-1] = devn[ndx2]; }
         }
+        if(devn[0] != 0 && devn[0] != ' ') {
+          ndx2 = 0; while(devn[ndx2++]) { devn[ndx2-1] = devn[ndx2]; } 
+        }
+      }
+      mtch = 1; ndx2 = 0;
+      if( devn[0] ==  0  || devn[0] == ' ') { indx = 255; break; }
+      if(('0' <= devn[0] && devn[0] <= '9') ||  // print usage for -\d
+         devn[0] == 'h')  { usag(); }           //              or -help
+      if(devn[0] == 'w' && !strncmp(sdvn[indx], "pcm", 3)) {
+        ndx2 = 1; break; }                      // shortcircuit if -w for pcm
+      if(devn[0] == 'x' && !strncmp(sdvn[indx], "imix", 4)) {
+        ndx2 = 1; break; }                      // shortcircuit if -x for imix
+      while((devn[ndx2] && ndx2 == 4 && !strncmp(devn, "line1", 5)) ||
+            (devn[ndx2] &&  devn[ndx2] != '+' && devn[ndx2] != '-' && 
+                           (devn[ndx2] <  '0' || '9' <  devn[ndx2]))) {
+        if(devn[ndx2] != sdvn[indx][ndx2]) { mtch = 0; }
+        ndx2++;
+      } // loop through all of devname && serch for any !match
+      if(mtch)           {             break; } // found a match
+      if(devn[0] == 'a') { indx = 255; break; } // /^all/
+      if(devn[0] == 'q') { indx = 256; break; } // /^-q/ like aumix
     }
-    dvic = indx;    // got a valid dvic    
-    if(ndx2 && devn[ndx2] && (devn[ndx2] == '+' || devn[ndx2] == '-' ||
-        devn[ndx2] == '0' || devn[ndx2] == '1' || 
-        devn[ndx2] == '2' || devn[ndx2] == '3' || 
-        devn[ndx2] == '4' || devn[ndx2] == '5' || 
-        devn[ndx2] == '6' || devn[ndx2] == '7' || 
-        devn[ndx2] == '8' || devn[ndx2] == '9')) { 
-        while(ndx2) {
-            indx = 0; while(devn[indx++]) { devn[indx-1] = devn[indx]; }
-            ndx2--;
-        }
-        lstr = rstr = devn;    indx = 127; // 127 is a flag for special argc==2
-    }                                    // but behaves as if argc==3
-    if(dvic < 255 && dvic == SOUND_MIXER_NRDEVICES) { /* didn't find a match */
-        fprintf(stderr, "%s is not a valid mixer device\n", devn);
-        usag();
+  }
+  dvic = indx; // got a valid dvic
+  if(ndx2 && devn[ndx2] && (devn[ndx2] == '+' || devn[ndx2] == '-' ||
+                           ('0' <= devn[ndx2] && devn[ndx2] <= '9'))) {
+    while(ndx2) {
+      indx = 0; while(devn[indx++]) { devn[indx-1] = devn[indx]; }
+      ndx2--;
     }
-    if(argc == 4) { lstr = argv[2]; rstr = argv[3]; } // separate l/r argz
-    if(argc == 3) { lstr = argv[2]; rstr = lstr; } // same arg for l&&r
-    stat = ioctl(fild, MIXER_READ(dvic), &levl);
-    if(stat == -1) { perror("MIXER_READ ioctl failed"); exit(1); }    
-    lft2 = levl & 0xff; rit2 = (levl & 0xff00) >> 8; // unpack l2/r2
-    if(argc == 2 && indx != 127) {
-        left = lft2;
-    } else if(lstr[0] == '+') { 
-        ndx2 = 0; while(lstr[ndx2++]) { lstr[ndx2-1] = lstr[ndx2]; }
-        left = lft2 + atoi(lstr); 
-        if(argc < 4) {
-            while(ndx2--) { lstr[ndx2+1] = lstr[ndx2]; }
-            lstr[0] = '+'; // same char* as rstr so restore '+' in case
-        }
-    } else if(lstr[0] == '-') { 
-        ndx2 = 0; while(lstr[ndx2++]) { lstr[ndx2-1] = lstr[ndx2]; }
-        left = lft2 - atoi(lstr); 
-        if(argc < 4) {
-            while(ndx2--) { lstr[ndx2+1] = lstr[ndx2]; }
-            lstr[0] = '-'; // "                           " '-' "     "
-        }
-    } else { left = atoi(lstr); }
-    if       (argc == 2 && indx != 127) { 
-        rite = rit2;
-    } else if(rstr[0] == '+') { 
-        ndx2 = 0; while(rstr[ndx2++]) { rstr[ndx2-1] = rstr[ndx2]; }    
-        rite = rit2 + atoi(rstr); 
-    } else if(rstr[0] == '-') { 
-        ndx2 = 0; while(rstr[ndx2++]) { rstr[ndx2-1] = rstr[ndx2]; }
-        rite = rit2 - atoi(rstr); 
-    } else { rite = atoi(rstr); }
-    if((argc > 2) && (left != rite) && !((1 << dvic) & sdvz) && dvic != 255) {
-        fprintf(stderr, "warning: %s is not a stereo device\n", sdevnamz[dvic]);
+    lstr = rstr = devn; indx = 127; // 127 is a flag for special argc==2
+  }                                 //   but behaves as if       argc==3
+  if(dvic < 255 && dvic == SOUND_MIXER_NRDEVICES) { // didn't find a match
+    fprintf(stderr, "!*EROR*! '%s' is not a valid mixer device!\n", devn);
+    usag();
+  }
+  if     (argc == 5) { lstr = argv[2]; rstr = argv[3]; setr = 1; } 
+  else if(argc == 4) { lstr = argv[2]; rstr = argv[3]; }
+  else if(argc == 3) { lstr = argv[2]; rstr =    lstr; }
+  else if(argc == 2) {                 rstr =    lstr; }
+  mxio("levl");
+  lft2 = levl & 0xff; rit2 = (levl & 0xff00) >> 8;  // unpack l2/r2
+  if       (argc == 2 && indx != 127) {
+    left = lft2; rite = rit2;
+  } else if(lstr[0] == '+' || lstr[0] == '-') { 
+    wich = lstr[0];
+    ndx2 = 0; while(lstr[ndx2++]) { lstr[ndx2-1] = lstr[ndx2]; }
+    if     (wich == '+') { left = lft2 + atoi(lstr); }
+    else if(wich == '-') { left = lft2 - atoi(lstr); }
+    if(lstr == rstr) {
+      if     (wich == '+') { rite = rit2 + atoi(rstr); }
+      else if(wich == '-') { rite = rit2 - atoi(rstr); }
     }
-    levl = (rite << 8) + left;    // encode l/r into one levl
-    if(dvic == 255) {
-        for(indx = 0; indx<SOUND_MIXER_NRDEVICES; indx++) {
-            if((1 << indx) & devm) { 
-                stat = ioctl(fild, MIXER_READ(indx), &levl);
-                if(stat == -1) { perror("MIXER_READ ioctl failed"); exit(1); }    
-                left = levl & 0xff; rite = (levl & 0xff00) >> 8; // unpack l/r
-                fprintf(stderr, "%8s: %0.2d%% / %0.2d%%\n", sdevnamz[indx], left, rite);
-            }
-        }
-        if(argc > 2) {
-            fprintf(stderr, "Sorry!  'all' currently is only able to list available mixer channel values.\nTo assign new values to all, each channel must be selected individually.\n");
-        }
-    } else if(dvic == 256) {
-        for(indx = 0; indx<SOUND_MIXER_NRDEVICES; indx++) {
-            if((1 << indx) & devm) { 
-                stat = ioctl(fild, MIXER_READ(indx), &levl);
-                if(stat == -1) { perror("MIXER_READ ioctl failed"); exit(1); }    
-                left = levl & 0xff; rite = (levl & 0xff00) >> 8; // unpack l/r
-                fprintf(stdout, "%s %d, %d\n", sdevnamz[indx], left, rite);
-            }
-        }
-        if(argc > 2) {
-            fprintf(stderr, "Sorry!  '-q' currently is only able to list available mixer channel values.\nTo assign new values to all, each channel must be selected individually.\n");
-        }
-    } else if(argc == 2 && indx != 127) { 
-        fprintf(stderr, "%s: %d%% / %d%%\n", sdevnamz[dvic], left, rite);
-    } else { // write new valz!
-        stat = ioctl(fild, MIXER_WRITE(dvic), &levl);
-        if (stat == -1) { perror("MIXER_WRITE ioctl failed"); exit(1); }
+  } else if(rstr[0] == '+' || rstr[0] == '-') {
+    wich = rstr[0];
+    ndx2 = 0; while(rstr[ndx2++]) { rstr[ndx2-1] = rstr[ndx2]; }
+    if     (wich == '+') { rite = rit2 + atoi(rstr); }
+    else if(wich == '-') { rite = rit2 - atoi(rstr); }
+  } else { left = atoi(lstr); rite = atoi(rstr); }
+  if((argc > 2) && (left != rite) && !((1 << dvic) & sdvz) && dvic != 255) {
+    fprintf(stderr, ":*WARN*: '%s' is not a stereo device.\n", sdvn[dvic]);
+  }
+  levl = (rite << 8) + left; // encode l/r into one levl
+  if(shwm) { fprintf(stdout, "Device:%s (%s)\n", minf.name, minf.id); }
+  if(dvic == 255 || dvic == 256) {
+    if(dvic == 255) { wich = 'a'; } else { wich = 'q'; }
+    for(dvic = 0; dvic < SOUND_MIXER_NRDEVICES; dvic++) { xprn(wich); }
+    if(argc > 2) {
+      fprintf(stderr, 
+"Sorry!  '-%c' currently is only able to list available mixer channel values."
+"To assign new values to all, each channel must be selected individually.\n",
+                      wich);
     }
-    close(fild);    // close mixer && exit
-    return 0;
+  } else if(argc == 2 && indx != 127 && !setr) { // just print current dvic -a
+    xprn('a');
+  } else { // write new valz!
+    mxio("wlvl");
+    if(setr) { mxio("wrec"); }
+  }
+  close(fild); // close mixer
+  return 0;    //   && exit
 }

@@ -40,10 +40,11 @@
 
 use strict;
 use Math::BaseCnv qw(:all);
-use Time::PT;
 use Curses::Simp;
+use Time::PT;
 
-my $mjvr = 1; my $mnvr = 0; my $ptvr = '41O0vbN'; my $auth = 'Pip@CPAN.Org';
+my $mjvr = 1; my $mnvr = 0; my $ptvr = '4284iUq'; 
+my $auth = 'Pip Stuart <Pip@CPAN.Org>';
 my $name = $0; $name =~ s/.*\///;
 # This hash contains all false characters for a font data file.  Any other
 #   characters in a char map will be read as true (on) pixels.
@@ -66,8 +67,8 @@ my $wrap = 1; # wrapping flag
 my $fpmd = 0; my $focu = 0; my $chan = 0; my $blok = 0; # font/pal mode, focus, rgb channel, block
 my $colr; my $blin; my $keey = ""; my $idle = 0; 
 my $chos = 0; my $choi = 0; my $chof = 0; my $chom = 0;
-my $dync = 1; my $uppt = 0;
-my %keyz; my $hite; my $widt; my $cbtm; my $bwid; my $temp;
+my $dync = 0; my $uppt = 0;
+my $hite; my $widt; my $cbtm; my $bwid; my $temp;
 my @tscr = (); my @tclr = (); my @cclr = (); my @pdat = (); my @fdat = ();
 my @tdat = (); my $chit = 16; my @bakc = (); my @bakp = (); my @bakf = ();
 my $ehnd; my $thnd; my $shnd; my $xhnd; my $bhnd; my $asav; my $clok = 0;
@@ -280,7 +281,7 @@ sub SaveFP { # Write both Font && Pal to a disk file
   my $clnm = shift;
   $svfl = $clnm if(defined $clnm && length $clnm);
   $svfl =~ s/\.fp[fp]?$/\.fp/i;
-  $svfl = WPmt("Please enter the filename to save your FONT && PAL to:",$svfl);
+  $svfl = Prmt('titl' => 'Please enter the filename to save your FONT && PAL to:', $svfl);
   $svfl =~ s/\.fp[fp]?$//i; $svfl .= ".fp";
   SaveFPP($svfl);
   SaveFPF($svfl);
@@ -292,7 +293,8 @@ sub SaveFPP { # Write the current FPal Pal to a disk file
     $svfl = $clnm;
   } else {
     $svfl =~ s/\.fp[fp]?$/\.fpp/i;
-    $svfl = WPmt("Please enter the filename to save your PAL to:", $svfl);
+    $svfl = Prmt('titl' => 'Please enter the filename to save your PAL to:', 
+                 $svfl);
     $svfl =~ s/\.fp[fp]?$//i; $svfl .= ".fpp";
   }
   open(FPFL, ">$svfl");
@@ -317,7 +319,8 @@ sub SaveFPF { # Write the current FPal Font to a disk file
     open(FPFL, ">>$clnm");
   } else {
     $svfl =~ s/\.fp[fp]?$/\.fpf/i;
-    $svfl = WPmt("Please enter the filename to save your FONT to:", $svfl);
+    $svfl = Prmt('titl' => 'Please enter the filename to save your FONT to:', 
+                 $svfl);
     $svfl =~ s/\.fp[fp]?$//i; $svfl .= ".fpf";
     open(FPFL, ">$svfl");
     print FPFL "#!/bin/sh\n";
@@ -361,14 +364,14 @@ sub CalcMxCn { # Calculate which color pairs have the Maximum Contrast possible
     }
   } else {
     if(@cprz < 4 ||
-       $cprz[0] ne "Wb" ||
-       $cprz[1] ne "wu" ||
-       $cprz[2] ne "Cr" ||
-       $cprz[3] ne "Pg") {
-      $cprz[0] = "Wb"; 
-      $cprz[1] = "wu";
-      $cprz[2] = "Cr";
-      $cprz[3] = "Pg";
+       $cprz[0] ne 'Wb' ||
+       $cprz[1] ne 'wu' ||
+       $cprz[2] ne 'Cr' ||
+       $cprz[3] ne 'Pg') {
+      $cprz[0] = 'Wb'; 
+      $cprz[1] = 'wu';
+      $cprz[2] = 'Cr';
+      $cprz[3] = 'Yg'; # 'Pg'
       DrawScrn();
     }
   }
@@ -378,11 +381,12 @@ sub DrawTBar {
   my $text = " fpal ";
   my $colr = "Gb" x length($text);
   $text .= "v$mjvr.$mnvr.$ptvr - by $auth ";
-  $colr .= 'WuYbWuCbWu' . ptcc('k') . '  Ub  WuWu  ' . 
-           'Gb' x 3 . 'Wu' . 'Yb' x 4 . 'Wu' . 'Cb' x 3;
-  $colr .= "bb" x ((length($text) * 2) - length($colr));
-  $text .= " "  x ($widt - length($text));
-  $colr .= "Cb" x ((length($text) * 2) - length($colr));
+  $colr .= 'WuYbWuCbWu' . ptcc('k') . ';  Ub  WuWu  ' . 
+           'Cu' x 3 . '  ' . 'Cu' x 6 . '  ' . 'Wu' . 
+           'Gb' x 3 . 'Wu' . 'Yb' x 4 . 'Wu' . 'Cb' x 3 . 'Wu';
+  $colr .= 'bb' x ((length($text) * 2) - length($colr));
+  $text .= ' '  x ($widt - length($text));
+  $colr .= 'Cb' x ((length($text) * 2) - length($colr));
   $main->Prnt('text' => $text, 'colr' => $colr, 'ycrs' => 0, 'xcrs' => 0);
   DrawPTim();
 }
@@ -940,7 +944,6 @@ suggestions.  Please support FSF.Org && EFF.Org.  Thanks.  TTFN.
                                                        -Pip
 ",
 );
-  $main->ShokScrn(2);
 }
 
 sub ShowHelp {
@@ -975,11 +978,10 @@ r/g/b   - jump to RGB Bars
                ?/H/F1  - Help  :  I - Info  :  x/q/Esc - eXit
 ",
 );
-  $main->ShokScrn(2);
 }
 
 sub IdlSleep {
-  ($idle++ <= 255) ? $main->Wait(0.31)  : $main->Wait(0.63); 
+  ($idle++ <= 255) ? $main->Wait(0.15)  : $main->Wait(0.63); 
 #  ($idle++ <= 255) ? $main->Wait(63)  : $main->Wait(127); # mildly responsive, heavy on cpu
 #  ($idle++ <= 255) ? $main->Wait(255) : $main->Wait(2047); # more sluggish, light cpu load
 }
@@ -990,7 +992,6 @@ sub DrawScrn {
   DrawTBar();
 }
 
-%keyz = $main->KNum(); # initialize keyz hash
 $hite = $main->Hite(); $widt = $main->Widt();
 LoadPale();
 LoadFont();
@@ -1167,35 +1168,35 @@ while(!$exit) {
 #        $fedx = int(((8     - 1) / 9) * $keey);
 #        $fedy = int((($chit - 1) / 9) * $keey);
         DrawCEdt();
-      } elsif($keey =~ /[hjkl]/ || exists $keyz{$keey}) {  # handle %KEYZ
-        if     ($keey eq 'h' || $keyz{$keey} eq "KEY_LEFT")  { 
+      } elsif($keey =~ /([hjkl]|KEY_(LEFT|RIGHT|UP|DOWN))/) {  # 
+        if     ($keey eq 'h' || $keey eq "KEY_LEFT")  { 
           if($wrap || $choi) {
 #            $choi = @list unless($choi); 
             $choi--;      
             DrawCEdt();
           }
-        } elsif($keey eq 'l' || $keyz{$keey} eq "KEY_RIGHT") { 
+        } elsif($keey eq 'l' || $keey eq "KEY_RIGHT") { 
           if($wrap) { # || ($choi < @list)) {
             $choi++;      
 #            $choi = 0 if($choi >= @list); 
             DrawCEdt();
           }
-        } elsif($keey eq 'k' || $keyz{$keey} eq "KEY_UP")    { 
+        } elsif($keey eq 'k' || $keey eq "KEY_UP")    { 
           if($wrap || $choi) {
 #            $choi = @list unless($choi); 
             $choi--;      
             DrawCEdt();
           }
-        } elsif($keey eq 'j' || $keyz{$keey} eq "KEY_DOWN")  { 
+        } elsif($keey eq 'j' || $keey eq "KEY_DOWN")  { 
           if($wrap) { # || ($choi < @list)) {
             $choi++;      
 #            $choi = 0 if($choi >= @list); 
             DrawCEdt();
           }
-        } elsif($keyz{$keey} eq "KEY_HOME")  { # move to left char from Edt
-        } elsif($keyz{$keey} eq "KEY_END")   { # move to right char from Edt
-        } elsif($keyz{$keey} eq "KEY_PPAGE") { # move to up char from Edt
-        } elsif($keyz{$keey} eq "KEY_NPAGE") { # move to down char from Edt
+        } elsif($keey eq "KEY_HOME")  { # move to left char from Edt
+        } elsif($keey eq "KEY_END")   { # move to right char from Edt
+        } elsif($keey eq "KEY_PPAGE") { # move to up char from Edt
+        } elsif($keey eq "KEY_NPAGE") { # move to down char from Edt
         } elsif($keey != -1) { ShowHelp();
         } else { IdlSleep(); }
       } else { ShowHelp(); }
@@ -1253,28 +1254,28 @@ while(!$exit) {
           $fedx = int(((8     - 1) / 9) * $keey);
           $fedy = int((($chit - 1) / 9) * $keey);
           DrawCEdt();
-        } elsif(exists $keyz{$keey}) {  # handle %KEYZ
-          if     ($keyz{$keey} eq "KEY_LEFT")  { 
+        } elsif($keey =~ /KEY_(LEFT|RIGHT|UP|DOWN)/) {
+          if     ($keey eq "KEY_LEFT")  { 
             if($wrap || $fedx) {
               $fedx = 8 unless($fedx); $fedx--;      DrawCEdt();
             }
             CharEdit($clok) if($clok);
-          } elsif($keyz{$keey} eq "KEY_RIGHT") { 
+          } elsif($keey eq "KEY_RIGHT") { 
             if($wrap || ($fedx < 7)) {
               $fedx++; $fedx = 0 if($fedx >= 8);     DrawCEdt();
             }
             CharEdit($clok) if($clok);
-          } elsif($keyz{$keey} eq "KEY_UP")    { 
+          } elsif($keey eq "KEY_UP")    { 
             if($wrap || $fedy) {
               $fedy = $chit unless($fedy); $fedy--;  DrawCEdt();
             }
             CharEdit($clok) if($clok);
-          } elsif($keyz{$keey} eq "KEY_DOWN")  { 
+          } elsif($keey eq "KEY_DOWN")  { 
             if($wrap || ($fedy < ($chit - 1))) {
               $fedy++; $fedy = 0 if($fedy >= $chit); DrawCEdt();
             }
             CharEdit($clok) if($clok);
-          } elsif($keyz{$keey} eq "KEY_HOME")  { # move to left char from Edt
+          } elsif($keey eq "KEY_HOME")  { # move to left char from Edt
             if($wrap || $ftbx) {
               unless($ftbx) { 
                 if($sqtb) { $ftbx = 16; } 
@@ -1282,12 +1283,12 @@ while(!$exit) {
               }
               $ftbx--;  DrawCTbl();
             }
-          } elsif($keyz{$keey} eq "KEY_END")   { # move to right char from Edt
+          } elsif($keey eq "KEY_END")   { # move to right char from Edt
             if($wrap || ($ftbx < 15) || (!$sqtb && $ftbx < 31)) {
               $ftbx++; $ftbx = 0 if($ftbx >= 32 || ($ftbx >= 16 && $sqtb));
               DrawCTbl();
             }
-          } elsif($keyz{$keey} eq "KEY_PPAGE") { # move to up char from Edt
+          } elsif($keey eq "KEY_PPAGE") { # move to up char from Edt
             if($wrap || $ftby) {
               unless($ftby) { 
                 if($sqtb) { $ftby = 16; } 
@@ -1295,7 +1296,7 @@ while(!$exit) {
               }
               $ftby--;  DrawCTbl();
             }
-          } elsif($keyz{$keey} eq "KEY_NPAGE") { # move to down char from Edt
+          } elsif($keey eq "KEY_NPAGE") { # move to down char from Edt
             if($wrap || ($ftby < 7) || ($sqtb && $ftby < 15)) {
               $ftby++; $ftby = 0 if($ftby >= 16 || ($ftby >= 8 && !$sqtb));
               DrawCTbl();
@@ -1310,8 +1311,7 @@ while(!$exit) {
           if($sqtb) { $ftby = int($ftbx / 16); $ftbx %= 16; }
           else      { $ftby = int($ftbx / 32); $ftbx %= 32; }
           DrawCTbl();
-        } elsif(lc($keey) eq "h" || (exists $keyz{$keey} && 
-               ($keyz{$keey} eq "KEY_HOME" || $keyz{$keey} eq "KEY_LEFT")))   {
+        } elsif(lc($keey) eq "h" || $keey eq "KEY_HOME" || $keey eq "KEY_LEFT")  {
           if($wrap || $ftbx) {
             unless($ftbx) { 
               if($sqtb) { $ftbx = 16; } 
@@ -1319,14 +1319,12 @@ while(!$exit) {
             }
             $ftbx--;  DrawCTbl();
           }
-        } elsif(lc($keey) eq "l" || (exists $keyz{$keey} && 
-               ($keyz{$keey} eq "KEY_END" || $keyz{$keey} eq "KEY_RIGHT")))   {
+        } elsif(lc($keey) eq "l" || $keey eq "KEY_END" || $keey eq "KEY_RIGHT")   {
           if($wrap || ($ftbx < 15) || (!$sqtb && $ftbx < 31)) {
             $ftbx++; $ftbx = 0 if($ftbx >= 32 || ($ftbx >= 16 && $sqtb));
             DrawCTbl();
           }
-        } elsif(lc($keey) eq "k" || (exists $keyz{$keey} && 
-               ($keyz{$keey} eq "KEY_PPAGE" || $keyz{$keey} eq "KEY_UP")))    {
+        } elsif(lc($keey) eq "k" || $keey eq "KEY_PPAGE" || $keey eq "KEY_UP")    {
           if($wrap || $ftby) {
             unless($ftby) { 
               if($sqtb) { $ftby = 16; } 
@@ -1334,8 +1332,7 @@ while(!$exit) {
             }
             $ftby--;  DrawCTbl();
           }
-        } elsif(lc($keey) eq "j" || (exists $keyz{$keey} && 
-               ($keyz{$keey} eq "KEY_NPAGE" || $keyz{$keey} eq "KEY_DOWN")))  {
+        } elsif(lc($keey) eq "j" || $keey eq "KEY_NPAGE" || $keey eq "KEY_DOWN")  {
           if($wrap || ($ftby < 7) || ($sqtb && $ftby < 15)) {
             $ftby++; $ftby = 0 if($ftby >= 16 || ($ftby >= 8 && !$sqtb));
             DrawCTbl();
@@ -1353,32 +1350,32 @@ while(!$exit) {
           $keey = $shnm{$keey} if($keey !~ /^\d$/);
           $pdat[$blok][$chan] = b64( int((63 / 9) * $keey) );
           ChngBarz();
-        } elsif($keey =~ /[hjkl]/ || exists $keyz{$keey}) {  # handle %KEYZ
-          if     ($keey eq 'h' || $keyz{$keey} eq "KEY_LEFT")  { 
+        } elsif($keey =~ /([hjkl]|KEY_(LEFT|RIGHT|UP|DOWN))/) {
+          if     ($keey eq 'h' || $keey eq "KEY_LEFT")  { 
             if($wrap || $pdat[$blok][$chan]) {
               $pdat[$blok][$chan] =   b10($pdat[$blok][$chan]) - 1;
               $pdat[$blok][$chan] = 63 if($pdat[$blok][$chan] < 0); 
               $pdat[$blok][$chan] =   b64($pdat[$blok][$chan]);
               ChngBarz();
             }
-          } elsif($keey eq 'l' || $keyz{$keey} eq "KEY_RIGHT") { 
+          } elsif($keey eq 'l' || $keey eq "KEY_RIGHT") { 
             if($wrap || b10($pdat[$blok][$chan]) < 63) {
               $pdat[$blok][$chan] =   b10($pdat[$blok][$chan]) + 1;
               $pdat[$blok][$chan] =  0 if($pdat[$blok][$chan] > 63); 
               $pdat[$blok][$chan] =   b64($pdat[$blok][$chan]);
               ChngBarz();
             }
-          } elsif($keey eq 'k' || $keyz{$keey} eq "KEY_UP") {
+          } elsif($keey eq 'k' || $keey eq "KEY_UP") {
             if($wrap || $chan) {
               $chan = 3 unless($chan); $chan--;  ChngBarz(); DrawStat();
             }
-          } elsif($keey eq 'j' || $keyz{$keey} eq "KEY_DOWN") {
+          } elsif($keey eq 'j' || $keey eq "KEY_DOWN") {
             if($wrap || ($chan < 2)) {
               $chan++; $chan = 0 if($chan >= 3); ChngBarz(); DrawStat();
             }
-          } elsif($keyz{$keey} eq "KEY_HOME") { 
+          } elsif($keey eq "KEY_HOME") { 
             $pdat[$blok][$chan] = '0'; ChngBarz();
-          } elsif($keyz{$keey} eq "KEY_END") { 
+          } elsif($keey eq "KEY_END") { 
             $pdat[$blok][$chan] = '_'; ChngBarz();
           } elsif($keey != -1) { ShowHelp();
           } else { IdlSleep(); }
@@ -1387,37 +1384,37 @@ while(!$exit) {
         if     (   $keey     =~ /^[0-9)!@#\$%^&*(ABCDEF]$/i) { # handle numbs
           $keey = b64($shnm{$keey} + 10) if($keey !~ /^\d$/);
           $blok = (b10($keey) % 16); DrawBlox();
-        } elsif($keey =~ /[hjkl]/ || exists $keyz{$keey}) {  # handle %KEYZ
-          if     ($keey eq 'h' || $keyz{$keey} eq "KEY_LEFT")  { 
+        } elsif($keey =~ /([hjkl]|KEY_(LEFT|RIGHT|UP|DOWN))/) {
+          if     ($keey eq 'h' || $keey eq "KEY_LEFT")  { 
             if($wrap || ($blok % 8) || ($sqtb && $blok % 4)) {
               if($sqtb) { $blok += 4 if(($blok % 4) == 0); }
               else      { $blok += 8 if(($blok % 8) == 0); }
               $blok--; DrawBlox();
             }
-          } elsif($keey eq 'l' || $keyz{$keey} eq "KEY_RIGHT") { 
+          } elsif($keey eq 'l' || $keey eq "KEY_RIGHT") { 
             if($wrap || (($blok + 1) % 8) || ($sqtb && ($blok + 1) % 4)) {
               $blok++; 
               if($sqtb) { $blok -= 4 if(($blok % 4) == 0); }
               else      { $blok -= 8 if(($blok % 8) == 0); }
               DrawBlox();
             }
-          } elsif($keey eq 'k' || $keyz{$keey} eq "KEY_UP") {
+          } elsif($keey eq 'k' || $keey eq "KEY_UP") {
             if($wrap || ($blok > 7) || ($sqtb && $blok > 3)) {
               if($sqtb) { $blok -= 4; }
               else      { $blok -= 8; }
               $blok += 16 if($blok < 0);
               DrawBlox();
             }
-          } elsif($keey eq 'j' || $keyz{$keey} eq "KEY_DOWN") {
+          } elsif($keey eq 'j' || $keey eq "KEY_DOWN") {
             if($wrap || ($blok < 8) || ($sqtb && $blok < 12)) {
               if($sqtb) { $blok += 4; }
               else      { $blok += 8; }
               $blok -= 16 if($blok >= 16);
               DrawBlox();
             }
-          } elsif($keyz{$keey} eq "KEY_HOME") { 
+          } elsif($keey eq "KEY_HOME") { 
             $blok = 0;  DrawBlox();
-          } elsif($keyz{$keey} eq "KEY_END") { 
+          } elsif($keey eq "KEY_END") { 
             $blok = 15; DrawBlox();
           } elsif($keey != -1) { ShowHelp();
           } else { IdlSleep(); }

@@ -1,11 +1,10 @@
-#
 # makefile for ximp
-#
-#CFLAGS=-s -O2 -DLINUX
-CFLAGS=-s -O6 -mcpu=pentium -DLINUX
-#LIBS=-lncurses
-NAME=ximp
-LNAME=ximp
+# Author: Pip Stuart <Pip@CPAN.Org>
+#CFLAGS  = -s -O2 -DLINUX
+CFLAGS  = -s -O6 -mcpu=pentium -DLINUX
+NAME    = ximp
+LNAME   = ximp
+INSTALL = install
 
 ximp: ximp.o
 	cc $(CFLAGS) -o $(NAME) ximp.o $(LIBS)
@@ -18,5 +17,8 @@ ximp.o: ximp.c
 clean:
 	rm *.o ximp
 
+install: $(NAME)
+	$(INSTALL) -m 775 $(NAME) /usr/local/bin/
+
 tar:
-	cd .. && tar cf - $(LNAME)/ | gzip -9 > $(LNAME)/$(LNAME).tar.gz
+	cd .. && tar cf - $(LNAME)/ | gzip -9 > $(LNAME)/$(LNAME).tgz

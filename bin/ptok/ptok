@@ -18,8 +18,8 @@ my $simp;
 while(lc($qiii) ne 'x' && lc($qiii) ne 'q') {
   if(lc($qiii) eq 'c')  { $clea ^= 1;  } # toggle clear flag
   if(lc($qiii) eq 'b')  { # toggle bars  flag
-    if($barz ^= 1) { $simp->FlagMaxi(1); $sped -= 0.074 if($sped > 0.1  ); }
-    else           { $simp->Hite(1);     $sped += 0.074 if($sped > 0.026); }
+    if($barz ^= 1) { $simp->FlagMaxi(1); }#$sped -= 0.074 if($sped > 0.1  ); }
+    else           { $simp->Hite(1);     }#$sped += 0.074 if($sped > 0.026); }
     $simp->ShokScrn(2);
     $simp->Draw();
   }

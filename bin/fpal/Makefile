@@ -1,11 +1,10 @@
-#
 # makefile for etfp
-#
-#CFLAGS=-s -O2 -DLINUX
-CFLAGS=-s -O6 -mcpu=pentium -DLINUX
-#LIBS=-lncurses
-NAME=etfp
-LNAME=etfp
+# Author: Pip Stuart <Pip@CPAN.Org>
+#CFLAGS  = -s -O2 -DLINUX
+CFLAGS  = -s -O6 -mcpu=pentium -DLINUX
+NAME    = etfp
+LNAME   = etfp
+INSTALL = install
 
 etfp: etfp.o
 	cc $(CFLAGS) -o $(NAME) etfp.o $(LIBS)
@@ -18,5 +17,8 @@ etfp.o: etfp.c
 clean:
 	rm *.o etfp
 
+install: $(NAME)
+	$(INSTALL) -m 775 $(NAME) /usr/local/bin/
+
 tar:
-	cd .. && tar cf - $(LNAME)/ | gzip -9 > $(LNAME)/$(LNAME).tar.gz
+	cd .. && tar cf - $(LNAME)/ | gzip -9 > $(LNAME)/$(LNAME).tgz

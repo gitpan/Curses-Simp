@@ -9,8 +9,8 @@ Curses::Simp - a Simple Curses wrapper for easy application development
 
 VERSION
 
-This documentation refers to version 1.0.41V0L3a of 
-Curses::Simp, which was released on Sat Jan 31 00:21:03:36 2004.
+This documentation refers to version 1.0.4287FJQ of 
+Curses::Simp, which was released on Sun Feb  8 07:15:19:26 2004.
 
 SYNOPSIS
 
@@ -33,38 +33,61 @@ could always benefit from being faster still.  Many Simp functions
 can accept rather cryptic parameters to do fancier things but the most
 common case is meant to be as simple as possible (hence the name).
 The more I learn about Curses, the more functionality I intend to add...
-Feeping Creatures overcome.
+maybe someday Simp will be done... yet Feeping Creatures overcome.
 
 2DO
 
-- add styles && style/blockchar increment keys to CPik
+- store some lilo structure for keeys && kmods pressed history in obj
 
-- mk generic file/dir browse dialog window function: Brws
+- add support for new '_bcol' array to accompany colr w/ only bkgrnds
 
-- add loop && scal flags w/ togl keys to CPik
+- mk proper scrollbars for all objects && use in Brws: view
+
+- fix prin weirdness
+
+- mk ~/.Simprc to save CPik && Brws cfg, OVERMAPP, etc.
+
+- Brws: read ~/.LS_COLORS if -r into GLBL{OVERMAPP}
+
+- Brws: mk view pack files left && right
 
 - describe Simp objects sharing apps (pmix + ptok)
           mk OScr read Simp apps @_ param list && auto-handle --geom wxh+x+y
 
-- add multi-line option to Prnt where text can split on /\n/
+- CPik: rewrite BildBlox to scale style to window dims if !flagshrk
+          && mk sure no forg or bakg works for all styles
 
-- add multi-line option to Prmt where dtxt can split on /\n/ && ^d
+- Prmt: mk new 'cbls' type: as a ckbx list && use in BrwsCnfg
+
+- Prmt: mk new 'rdls' type: as a radio list w/ auto (*) -
+
+- Mesg: mk new 'slid' type: params for all overlay text, chars, ticks, 
+          flags, etc.
+
+- Prnt: add multi-line option where text can split on /\n/ but each new
+          line prints relative to starting xcrs
+
+- Prmt: add multi-line option where dtxt can split on /\n/ && ^d
           accepts entry instead of RETURN
 
-- handle ascii chars under 32 with escapes from Prnt
+- Prnt: handle ascii chars under 32 with escapes like Draw
 
-- optimize Draw more
+- Draw: optimize rendering
 
-- imp up/dn scrollbars either internally or w/ normal Curses funcs
+- Prnt&&Draw: handle ascii chars under 32 better than current escapes
 
-- handle ascii chars under 32 better than current escapes if possible
+- mk 'ceol' && 'ceos' params to clears text[n] from cursor on
+
+- consider breaking sub (CPik|Brws|.+?) into own Curses::Simp::$1.pm
+          instead of letting Simp.pm remain so cluttered
 
         if detectable:
 
 - handle xterm resize events
 
 - handle mouse input (study any existent Curses apps that use mouse 
-          input you can find ... probably in C)
+          input you can find ... probably in C), read man for gpm(1),
+          sysmouse(4), && sb(4) && study aumix mouse source
 
 - Learn how to read a Shift-Tab key press if in any way 
           distinguishable from Tab/Ctrl-I
@@ -101,9 +124,9 @@ can be used as initialization parameters to new():
   'ycrs'     or 'CursorYOffset'             =>         0
   'xcrs'     or 'CursorXOffset'             =>         0
   'btyp'     or 'WindowBorderType'          =>         0
-  'bclr'     or 'WindowBorderColor'         =>        '!w'
+  'bclr'     or 'WindowBorderColor'         =>        'wb$'
   'titl'     or 'WindowTitle'               =>         ''
-  'tclr'     or 'WindowTitleColor'          =>        '!W'
+  'tclr'     or 'WindowTitleColor'          =>        'Wb$'
   'dndx'     or 'DisplayStackIndex'         =>         0
   'flagaudr' or 'FlagAutoDraw'              =>         1
   'flagmaxi' or 'FlagMaximize'              =>         1
@@ -134,6 +157,25 @@ update many Simp fields with a call to any particular
 accessor method.  The method name just designates where the lone
 value will be assigned and which field will be returned.
 
+CnvAnsCC or ConvertAnsiColorCode( $AnsiColorCode )
+
+Returns the Simp form of the ANSI color code
+$AnsiColorCode.
+
+$AnsiColorCode may contain any of the typical ANSI attribute or 
+color codes:
+
+                          Attribute        codes:
+    00=none 01=bold 04=underscore 05=blink 07=reverse 08=concealed
+                          Foreground color codes:
+    30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white
+                          Background color codes:
+    40=black 41=red 42=green 43=yellow 44=blue 45=magenta 46=cyan 47=white
+
+ConvertAnsiColorCode() is primarily useful as an internal function
+to the Curses::Simp package but I have exposed it because it could
+be useful elsewhere.
+
 ExpandCC or ExpandColorCodeString( $CompressedColorCodeString )
 
 Returns the expanded form of the compressed color code string 
@@ -145,9 +187,9 @@ characters specified in the L<"COLOR NOTES">
 
 ExpandColorCodeString() is primarily useful as an internal function
 to the Curses::Simp package but I have exposed it because it can
-be useful to test and see how a compressed color code string would
-be expanded especially if expansion from PrintString() or DrawWindow()
-is not what you're expecting.
+be useful during testing to see how a compressed color code string would
+be expanded (especially if expansion from PrintString() or DrawWindow()
+is not what you're expecting).
 
 ShokScrn or ShockScreen( [$FlagClear] )
 
@@ -252,16 +294,16 @@ means that the return value should be easy to test directly like:
   use Curses::Simp;
   my $simp = Curses::Simp->new();
   my $key  = $simp->GetKey(-1); # get a blocking keypress
-  if     ($key eq 'a')         { # do 'a' stuff
-  } elsif($key eq 'b')         { # do 'b' stuff
-  } elsif($key eq 'A')         { # do 'A' stuff
-  } elsif($key eq 'B')         { # do 'B' stuff
-  } elsif($key eq 'KEY_LEFT')  { # do Left-Arrow-Key stuff
-  } elsif($key eq 'KEY_NPAGE') { # do PageDown       stuff
-  } elsif($key eq 'KEY_F1')    { # do F1 (Help)      stuff
-  } elsif(ord($key) ==  9)     { # do Tab    stuff
-  } elsif(ord($key) == 13)     { # do Return stuff
-  } elsif(ord($key) == 27)     { # do Escape stuff
+  if     (    $key  eq 'a'        ) { # do 'a' stuff
+  } elsif(    $key  eq 'b'        ) { # do 'b' stuff
+  } elsif(    $key  eq 'A'        ) { # do 'A' stuff
+  } elsif(    $key  eq 'B'        ) { # do 'B' stuff
+  } elsif(    $key  eq 'KEY_LEFT' ) { # do Left-Arrow-Key stuff
+  } elsif(    $key  eq 'KEY_NPAGE') { # do PageDown       stuff
+  } elsif(    $key  eq 'KEY_F1'   ) { # do F1 (Help)      stuff
+  } elsif(ord($key) ==  9         ) { # do Tab    stuff
+  } elsif(ord($key) == 13         ) { # do Return stuff
+  } elsif(ord($key) == 27         ) { # do Escape stuff
   }
 
 $FlagSDLKey is a flag (default is false) which tells GetKey() to return
@@ -467,7 +509,7 @@ Flag Accessors
   FlagShrk or FlagShrinkToFit   1    # Shrink window to fit TextData
   FlagCntr or FlagCenter        1    # Center window within entire screen
   FlagCVis or FlagCursorVisible 0    # Cursor Visible
-  FlagScrl or FlagScrollbar     0    # use Scrollbars (not implemented yet)
+  FlagScrl or FlagScrollbar     0    # use Scrollbars
   FlagSDLK or FlagSDLKey        0    # use advanced SDLKey mode in GetKey()
   FlagBkgr or FlagBackground    0    # always expect background colors to be
                                      #   present in color codes
@@ -580,7 +622,7 @@ The list of returnable SDLKey names are:
   'SDLK_HASH',           #'#'     hash
   'SDLK_DOLLAR',         #'$'     dollar
   'SDLK_AMPERSAND',      #'&'     ampersand
-  'SDLK_QUOTE',          #'''     quote
+  'SDLK_QUOTE',          #'\''    quote
   'SDLK_LEFTPAREN',      #'('     left parenthesis
   'SDLK_RIGHTPAREN',     #')'     right parenthesis
   'SDLK_ASTERISK',       #'*'     asterisk
@@ -612,6 +654,7 @@ The list of returnable SDLKey names are:
   'SDLK_CARET',          #'^'     caret
   'SDLK_UNDERSCORE',     #'_'     underscore
   'SDLK_BACKQUOTE',      #'`'     grave
+  'SDLK_TILDE',          #'~'     tilde
   'SDLK_a',              #'a'     a
   'SDLK_b',              #'b'     b
   'SDLK_c',              #'c'     c
@@ -869,31 +912,61 @@ CHANGES
 
 Revision history for Perl extension Curses::Simp:
 
+- 1.0.4287FJQ  Sun Feb  8 07:15:19:26 2004
+
+* made Brws()
+
+* added ckbx && butn types to Mesg() && drop type to Prmt() && wrote Focu()
+    to focus new types
+
+* added info && help types to Mesg() to auto title && color those screens
+
+* added blox && squr styles to CPik && made style/blockchar increment
+    keys (PgUp/Dn/Home/End)
+
 - 1.0.41V0L3a  Sat Jan 31 00:21:03:36 2004
 
-* made verbose accessor names like VerboseName instead of verbose_name,
-    updated POD to use VerboseNames instead of 4-letter names &&
-    removed most '&&', made Text('1' => 'new line') use Prnt nstd of
-    Draw for efficiency, made ShokScrn not blank the screen so often,
-    made GetK return detected KEY_ names in normal mode, added CURSES
-    KEY MODE section && made both key modes return -1 if $tmot reached,
-    fixed ShokScrn overlap && DelW bugs, wrote support for VerboseName
-    hash keys, made flag accessors without ^Flag
+* made flag accessors without ^Flag
+
+* wrote support for VerboseName hash keys
+
+* fixed ShokScrn overlap && DelW bugs
+
+* made GetK return detected KEY_ names in normal mode && added CURSES
+    KEY MODE section to POD && made both key modes return -1 if $tmot reached
+
+* made ShokScrn not blank the screen so often
+
+* made Text('1' => 'new line') use Prnt instead of Draw for efficiency
+
+* updated POD to use VerboseNames instead of 4-letter names && erased most '&&'
+
+* made verbose accessor names like VerboseName instead of verbose_name
 
 - 1.0.41O4516  Sat Jan 24 04:05:01:06 2004
 
+* made all but ptok && qbix non-executable for EXE_FILES
+
 * updated POD && added Simp projects into bin/ && MANIFEST in preparation
-    for release, made all but ptok && qbix non-executable for EXE_FILES
+    for release
 
 - 1.0.41O3SQK  Sat Jan 24 03:28:26:20 2004
 
-* setup window border char sets, added SDLK advanced input option to GetK,
-    made new Mesg, Prmt, && CPik utils, added PrntInto 'flagprin' ability,
-    fixed weird char probs in Draw && removed weird char support from Prnt
+* fixed weird char probs in Draw && removed weird char support from Prnt
+
+* added PrintInto '_flagprin' ability
+
+* made new Mesg, Prmt, && CPik utils
+
+* added SDLK advanced input option to GetK
+
+* setup window border char sets
 
 - 1.0.4140asO  Sun Jan  4 00:36:54:24 2004
 
-* CHANGES section && new objects created, refined Draw() && InitPair()
+* refined Draw() && InitPair() for objects instead of exported procedures
+
+* CHANGES section && new objects created
 
 - 1.0.37VG26k  Thu Jul 31 16:02:06:46 2003
 
@@ -913,13 +986,17 @@ FILES
 
 Curses::Simp requires:
 
-  L<Carp>                to allow errors to croak() from calling sub
-  L<Curses>              provides core screen and input handling
-  L<Math::BaseCnv>       to handle number-base conversion
+L<Carp>          - to allow errors to croak() from calling sub
+
+L<Curses>        - provides core screen and input handling
+
+L<Math::BaseCnv> - to handle number-base conversion
 
 Curses::Simp uses (if available):
 
-  L<Time::Frame>         to provide another mechanism for timing
+L<Time::PT>      - for pt color coding
+
+L<Time::Frame>   - to provide another mechanism for timing
 
 LICENSE
 
