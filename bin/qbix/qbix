@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 # 23H4o4o - qbix.pl updated by Pip@CPAN.Org
 # Desc: This is a simple Rubik's Cube implementation.  I call 'em QbixRubes.
-# 2do: 
+# 2do:
 #   imp beginning search / store utils
 #   fix bug where space gets printed after first nonconv'd char (ck Simp!)
 #   make way for arrow keys to rotate side 0 down to 1 && l/r rotate 1,2
 #   port solver from .cpp
-#   write interactive (keyb 1st then mous) home rube input 
+#   write interactive (keyb 1st then mous) user rube input
 #     notes:
 #       search should take compact rube representation && return next
 #         turn (if found) in solution
@@ -19,6 +19,7 @@
 #       possible corner positions is 8! = 40320 which can be represented
 #         by a word (to extract each component, start looking for 8 value
 #         by dividing by 7! [save remainder for next one], then by 6!...)
+#         644Bqc5 - This doesn't work!  They've got to be separated.
 #       some possibilities: (8 corns w/ 3 rots, 12 edges w/ 2 rots)
 # kilo-  2^10 =                      1,024
 # eRot: 2**11 =                      2,048 (sum must be even so infer last)
@@ -63,27 +64,27 @@
 #     which results in 18 possible movements at every juncture.  It would
 #     be immensely valuable (space-wise) to store only 16 possible values
 #     per turn since only 4bits would be needed instead of 5.  This
-#     can probably be accomplished if you assume that the client has 
-#     chosen a front side before doing a move lookup.  The client would 
-#     likely persue many incorrect paths but that would be acceptable
-#     if one could ultimately be determined.  The steps the client 
-#     software would have to take are as follows:
+#     can probably be accomplished if you assume that the client has
+#     chosen a front side before doing a move lookup.  The client would
+#     likely pursue many incorrect paths but that would be acceptable
+#     if one right one could ultimately be determined.  The steps the
+#     client software would have to take are as follows:
 #       0) save a backup of the entire state of the initial rube
 #       1) lookup based on state
 #       1b) if lookup found result, follow path for each possible front (6)
-#       2) else try each possible turn of each of the 6 sides && try to 
+#       2) else try each possible turn of each of the 6 sides && try to
 #           find a lookup with a result from any of those
 #       3) make random turns && return to step 1
 #         *note* as soon as any lookup returns a result (no matter what
-#          side was turned which direction to get there) it means that 
-#          some previous turn (maybe a different one than was actually 
-#          performed) results in an optimal solution so pretend that 
-#          each of the 6 possible front sides are the real front && 
+#          side was turned which direction to get there) it means that
+#          some previous turn (maybe a different one than was actually
+#          performed) results in an optimal solution so pretend that
+#          each of the 6 possible front sides are the real front &&
 #          traverse the path until the right one yields the solution.
 #          This probably also needs to be done for each possible up
 #          side too so for each of the 24 possible front sides (since
 #          each could have 0-3 clockwise turns to start) there would
-#          be 4 possible up sides for each which yields 64 possible 
+#          be 4 possible up sides for each which yields 64 possible
 #          tests for any initial state.  This mechanism is rather
 #          convoluted but it will probably save enough disk space
 #          to be well worth it.
@@ -95,37 +96,37 @@
 #     brings lookup index under 64bit threshold too)
 #   last unused possibility in turn answer (16th in 4bit) can be a rare
 #     hint that the 3rd possible side (index[2]) is being turned twice
-#     for this turn && that it does designate the opposite [back] of front 
+#     for this turn && that it does designate the opposite [back] of front
 #     (which means that if 3rd side is turned twice && all 4 bits aren't
 #     set, then 4th possible side must be opposite [back])
 #   actually, now that I think of it, it seems that there's a big problem
 #     since any lookup state could be arrived at from many routes (when
-#     solving) so the omitted information would have to be divined at 
+#     solving) so the omitted information would have to be divined at
 #     every lookup which nullifies all data's usefulness... which means
 #     that for any given lookup (aka rubestate is the key), there must
 #     be a clear value for which absolute side to turn how much.  4bits
-#     (16 values) could be used to store mixing since previous turn 
-#     (which is closer to the root of the tree) is known && cannot be 
+#     (16 values) could be used to store mixing since previous turn
+#     (which is closer to the root of the tree) is known && cannot be
 #     side of current turn but the reverse path for solving would get
 #     lost at every turn [value] it found... which means the value at
-#     any possible key must provide answer for each possibility so 
+#     any possible key must provide answer for each possibility so
 #     every value could assume side 0 [white] is always front && side 1
 #     [red] is always up to save space on orientation data but then we
-#     still must store all 18 possible turns (which would wastefully 
-#     require 5bits) or assume all turns are clockwise [forward] (which 
-#     wouldn't be so bad since there's no concept of previous turn to 
+#     still must store all 18 possible turns (which would wastefully
+#     require 5bits) or assume all turns are clockwise [forward] (which
+#     wouldn't be so bad since there's no concept of previous turn to
 #     avoid again anyway) && store all 6 possible turns (which would
 #     still wastefully require 3bits)
-#         21 3bit values (63bits) could be packed into a single 64bit 
+#         21 3bit values (63bits) could be packed into a single 64bit
 #       lookup result... 64th bit could be flag to designate turn as
 #       last turn to (aka first from) solution
-#         possibility 7 && 8 in each 3bit value could be used to 
+#         possibility 7 && 8 in each 3bit value could be used to
 #       signify that side 0 [white] is being turned again (7) or for
 #       a third time (8)... might be faster to ignore possibility 7
 #       && 8 since they can't add any useful information && would only
 #       add to average overhead
 #     maybe use corner positions 8*4*2=64 to name databases... positions
-#       6*5=30 name tables in each database... positions 7*3=21 packed 
+#       6*5=30 name tables in each database... positions 7*3=21 packed
 #       3bit values per lookup... which leaves eR*cR*eP
 #       (2,145,436,670,361,699 possibilities) as unique key per table
 #       && 64bit value results
@@ -157,73 +158,71 @@
 #
 #   23IMOsa - I'm thinking more about problem of storage && wondering if
 #     15 possible turns (only 4bits) would be enough at any juncture...
-#     hopefully I can figure out whether it is enough since it seems 
+#     hopefully I can figure out whether it is enough since it seems
 #     to be a much more advantageous storage method of movements.  Well
-#     the assumption is that the tree is built from the solution state 
-#     starting with one of the possible white turns (1,2,3[aka -1]) 
-#     which must be followed by either red (1,2,3) or blue-then-red 
+#     the assumption is that the tree is built from the solution state
+#     starting with one of the possible white turns (1,2,3[aka -1])
+#     which must be followed by either red (1,2,3) or blue-then-red
 #     (11,12,13,21,22,23,31,32,33) so there's 36 possible starts (6bits).
 #     After one of those start sequences, the only rules governing all
 #     further traversals are:
-#       a) The same side can never be turned twice in a row (since that 
+#       a) The same side can never be turned twice in a row (since that
 #           would simply modify the previous turn's value (1,2,3).
-#       b) If a side is turned, then it's opposite side is turned, 
+#       b) If a side is turned, then it's opposite side is turned,
 #           the first side cannot be turned again (actually neither can
 #           but the second [opposite of first] is covered by rule a).
 #     Everything else seems wholly valid.
-#     So... it makes sense to only store which of the 15 possibilities 
-#       (or 12 if rule b also applies) is taken at any turn juncture for 
-#       building out tree.  
+#     So... it makes sense to only store which of the 15 possibilities
+#       (or 12 if rule b also applies) is taken at any turn juncture for
+#       building out tree.
 #     Problem: Can an optimal solution be determined (by traversing tree
 #       from some node back to root) if the tree is built out without
 #       uniquely identifying which side is being turned?
 #     I used to think so then changed my mind... now I think it might be
-#       feasible again.  Ignore the uniformity of the rube (ie. the 
-#       arbitrary-ness of which side is chosen as front && up) for a 
+#       feasible again.  Ignore the uniformity of the rube (ie. the
+#       arbitrary-ness of which side is chosen as front && up) for a
 #       minute.  Realize that traversing either direction (either mixing
-#       from solved or solving from mixed) has a first move && next in 
-#       traversal follows rules a && b... but knowing first move from 
-#       solved (when mixing) is explicit.  Problem is choosing any 
-#       node mid tree && determining what side is omitted from 
+#       from solved or solving from mixed) has a first move && next in
+#       traversal follows rules a && b... but knowing first move from
+#       solved (when mixing) is explicit.  Problem is choosing any
+#       node mid tree && determining what side is omitted from
 #       representation...
 #     WHOA!!! New Idea: instead of storing actual turn to get to lower
 #       level in tree (closer to solved root), just store depth.  Solver
-#       can perform each move from any node && compare all of their 
-#       depths.  Every node will have exactly one adjacent node with 
-#       a smaller (by 1) depth (their parent) && either 14 children or 
-#       11 (if their parent is their opposite side by rule b).  This 
-#       should fit fine in 4bit values since the theoretical maximum 
-#       depth any mixed rube could require is 17 && first 36 possible 
+#       can perform each move from any node && compare all of their
+#       depths.  Every node will have exactly one adjacent node with
+#       a smaller (by 1) depth (their parent) && either 14 children or
+#       11 (if their parent is their opposite side by rule b).  This
+#       should fit fine in 4bit values since the theoretical maximum
+#       depth any mixed rube could require is 17 && first 36 possible
 #       moves don't need to be stored in tree (which cuts out first 2
-#       or 3 moves) so max depth would only be 14 or 15 (if there was 
+#       or 3 moves) so max depth would only be 14 or 15 (if there was
 #       even enough space to store that much data).
 #     So total data is 8.65e19 * 4bits (about 44 exabytes)
 #     At some threshold, it will make sense to pack all bits together
 #       into giant address space (when size of indices plus data
-#       exceeds the total data size necessary).  
+#       exceeds the total data size necessary).
 #     Worst case seems to be 5,760 lookups (if all data was indexed)
-#       because each of the 24 possible front/up combinations could 
-#       attempt to lookup to a depth of 16 trying each of 15 
-#       possibilities.  This is the worst for finding the most optimal 
+#       because each of the 24 possible front/up combinations could
+#       attempt to lookup to a depth of 16 trying each of 15
+#       possibilities.  This is the worst for finding the most optimal
 #       solution.  Most states will have overlap between front/up
-#       combinations && will thus yield optimal solutions for that 
+#       combinations && will thus yield optimal solutions for that
 #       initial front/up but not necessarily for the whole rube.  I'd
-#       guess that avg. lookups would be 1,344 for any solution && 
+#       guess that avg. lookups would be 1,344 for any solution &&
 #       2,688 for optimal since most depths will be about 14 && most
-#       possible neighbor testing will only need 8.
-
+#       possible neighbor testing will only need 8... but I could be way off.
 use strict;
 use Math::BaseCnv qw(:all);
 use Curses::Simp;
 use Time::PT;
-
-my $mjvr = 1; my $mnvr = 0; my $ptvr = '41O0vBi'; my $auth = 'Pip@CPAN.Org';
+my $mjvr = 1; my $mnvr = 0; my $ptvr = 'A6GFTqr';
+my $auth = 'Pip@CPAN.Org';#'Pip Stuart <Pip@CPAN.Org>';
 my $name = $0; $name =~ s/.*\///;
-
 my $frmt = '2d3dqbix.txt';
-my $prmp = 'C'; my $nstk = 'w';
+#  $frmt = '160cqbix.txt';
+my $prmp = 'C'; my $nstk = 'w'; my $filc = 0; my $fchr = '@';#$fchr = chr(219);
 my @colr = ( 'W', 'R', 'Y', 'B', 'O', 'G' );
-#my @colr = ( 'W', 'R', 'B', 'Y', 'O', 'G' ); # alternate color set
 my @corn = ( 0,0, 1,0, 2,0, 3,0, 4,0, 5,0, 6,0, 7,0 );
 my @edge = ( 0,0, 1,0, 2,0, 3,0, 4,0, 5,0, 6,0, 7,0, 8,0, 9,0, 10,0, 11,0 );
 my %coln = ('0'=>'1','1'=>'1','2'=>'1','3'=>'1','4'=>'1','5'=>'1');
@@ -235,9 +234,9 @@ my @trnz = ( 0,1,2,3,  0,0,0,0,  0,1,2,3,  0,0,0,0,
              7,6,5,4,  0,0,0,0,  7,6,5,4,  0,0,0,0,
              4,5,3,2,  1,2,1,2,  4,11,2,10,1,1,1,1,
              4,2,1,7,  2,1,2,1,  7,10,1,9, 0,0,0,0 );
-my @cndx = (  0, 9,18,  2,53,15,  8,42,47,  6,20,44, 
+my @cndx = (  0, 9,18,  2,53,15,  8,42,47,  6,20,44,
              27,45,36, 33,38,26, 35,24,11, 29,17,51 );
-my @endx = (  1,12,  5,50,  7,43,  3,19, 30,37, 34,25, 
+my @endx = (  1,12,  5,50,  7,43,  3,19, 30,37, 34,25,
              32,14, 28,48, 10,21, 16,52, 39,46, 41,23 );
 my $tmpl = 
 '                    -                                   -                   @
@@ -265,13 +264,43 @@ my $tmpl =
                 \BBB|OO/                            \ZZZZZZZ/               @
                     -                                   -                   @
 ^ Turns:  Clockwise = wrybog    CounterClockwise = WRYBOG    Twice = 012345 @
-^    Mix = m    Init = i    Exit = x                     Please Press A Key:$';
+^  AltColrSet=a   Fill=f   Mix=m   Init=i   Exit=x       Please Press A Key:$';
 my $qiii = 'N'; my $i; my $j; my $mixc = 0;
-my $simp = Curses::Simp->new();
-if(-r $frmt) {
-  open(FILE, "<$frmt"); $tmpl = join('', <FILE>); close(FILE);
+my $simp = Curses::Simp->new(); $frmt = '160cqbix.txt' if($simp->Widt() == 160);
+if(-r $frmt){ open(FILE, "<$frmt"); $tmpl = join('', <FILE>); close(FILE); }
+sub ShowInfo { # Display an Info dialog window
+    $simp->Mesg('type' => 'info',
+" $name v$mjvr.$mnvr.$ptvr - by $auth
+ 
+$name was written to play with but it's difficult when you can't hold it
+ 
+ Shout out to Keith && all the LBox.Org crew.  Thanks to Beppu-san for 
+being a good friend.  I hope you find $name useful.  Please don't 
+hesitate to let me know if you app-ree-see-ate it or if you'd like
+me to add something for you.  I'd be glad to improve it given new 
+suggestions.  Please support FSF.Org && EFF.Org.  Thanks.  TTFN.
+ 
+                                                       -Pip
+ 
+");
 }
+sub ShowHelp { # HELP!
+    $simp->Mesg('type' => 'help',
+" $name v$mjvr.$mnvr.$ptvr - by $auth
 
+                        Global Keys:                                
+  h         - displays this Help screen                             
+ wrybog     - rotates colored side         clockwise once           
+ WRYBOG     - rotates colored side counter-clockwise once           
+ 012345     - rotates colored side                   twice          
+  a         - toggles Alternate color scheme  (Blue <-> Yellow)     
+  f         - toggles Filling solid characters or color letters     
+  m         - Mixes       the rube                                  
+  i         - Initializes the rube                                  
+
+                        System Stuff:
+       ?/H/F1  - Help  :  I - Info  :  x/q/Esc - eXit");
+}
 sub MixxRube {
   my $tkey = '-1';
   while($mixc-- && $tkey eq '-1') {
@@ -282,10 +311,9 @@ sub MixxRube {
   }
   return($tkey);
 }
-
 sub TernRube {
   if($qiii =~ /m/i) { $mixc = 31; $qiii = MixxRube(); return; } # mixx
-  if($qiii =~ /i/i) { # init
+  if($qiii =~ /i/ ) { # init
     @corn = ( 0,0, 1,0, 2,0, 3,0, 4,0, 5,0, 6,0, 7,0 );
     @edge = ( 0,0, 1,0, 2,0, 3,0, 4,0, 5,0, 6,0, 7,0, 8,0, 9,0, 10,0, 11,0 );
     DrawRube();
@@ -300,7 +328,7 @@ sub TernRube {
       ($corn[$trnz[$j+ 0]*2], $corn[$trnz[$j+ 0]*2+1],
        $corn[$trnz[$j+ 1]*2], $corn[$trnz[$j+ 1]*2+1],
        $corn[$trnz[$j+ 2]*2], $corn[$trnz[$j+ 2]*2+1],
-       $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1]) = 
+       $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1]) =
       ($corn[$trnz[$j+ 2]*2], $corn[$trnz[$j+ 2]*2+1],
        $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1],
        $corn[$trnz[$j+ 0]*2], $corn[$trnz[$j+ 0]*2+1],
@@ -308,16 +336,16 @@ sub TernRube {
       ($edge[$trnz[$j+ 8]*2], $edge[$trnz[$j+ 8]*2+1],
        $edge[$trnz[$j+ 9]*2], $edge[$trnz[$j+ 9]*2+1],
        $edge[$trnz[$j+10]*2], $edge[$trnz[$j+10]*2+1],
-       $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1]) = 
+       $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1]) =
       ($edge[$trnz[$j+10]*2], $edge[$trnz[$j+10]*2+1],
        $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1],
        $edge[$trnz[$j+ 8]*2], $edge[$trnz[$j+ 8]*2+1],
        $edge[$trnz[$j+ 9]*2], $edge[$trnz[$j+ 9]*2+1]);
-    } elsif($qiii eq uc($qiii)) {                     # turn counterclockwise 
+    } elsif($qiii eq uc($qiii)) {                     # turn counterclockwise
       ($corn[$trnz[$j+ 0]*2], $corn[$trnz[$j+ 0]*2+1],
        $corn[$trnz[$j+ 1]*2], $corn[$trnz[$j+ 1]*2+1],
        $corn[$trnz[$j+ 2]*2], $corn[$trnz[$j+ 2]*2+1],
-       $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1]) = 
+       $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1]) =
       ($corn[$trnz[$j+ 1]*2],($corn[$trnz[$j+ 1]*2+1]+$trnz[$j+ 5]) % 3,
        $corn[$trnz[$j+ 2]*2],($corn[$trnz[$j+ 2]*2+1]+$trnz[$j+ 6]) % 3,
        $corn[$trnz[$j+ 3]*2],($corn[$trnz[$j+ 3]*2+1]+$trnz[$j+ 7]) % 3,
@@ -325,16 +353,16 @@ sub TernRube {
       ($edge[$trnz[$j+ 8]*2], $edge[$trnz[$j+ 8]*2+1],
        $edge[$trnz[$j+ 9]*2], $edge[$trnz[$j+ 9]*2+1],
        $edge[$trnz[$j+10]*2], $edge[$trnz[$j+10]*2+1],
-       $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1]) = 
+       $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1]) =
       ($edge[$trnz[$j+ 9]*2],($edge[$trnz[$j+ 9]*2+1]+$trnz[$j+13]) % 2,
        $edge[$trnz[$j+10]*2],($edge[$trnz[$j+10]*2+1]+$trnz[$j+14]) % 2,
        $edge[$trnz[$j+11]*2],($edge[$trnz[$j+11]*2+1]+$trnz[$j+15]) % 2,
        $edge[$trnz[$j+ 8]*2],($edge[$trnz[$j+ 8]*2+1]+$trnz[$j+12]) % 2);
-    } else {                                          # turn        clockwise 
+    } else {                                          # turn        clockwise
       ($corn[$trnz[$j+ 0]*2], $corn[$trnz[$j+ 0]*2+1],
        $corn[$trnz[$j+ 1]*2], $corn[$trnz[$j+ 1]*2+1],
        $corn[$trnz[$j+ 2]*2], $corn[$trnz[$j+ 2]*2+1],
-       $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1]) = 
+       $corn[$trnz[$j+ 3]*2], $corn[$trnz[$j+ 3]*2+1]) =
       ($corn[$trnz[$j+ 3]*2],($corn[$trnz[$j+ 3]*2+1]+$trnz[$j+ 7]) % 3,
        $corn[$trnz[$j+ 0]*2],($corn[$trnz[$j+ 0]*2+1]+$trnz[$j+ 4]) % 3,
        $corn[$trnz[$j+ 1]*2],($corn[$trnz[$j+ 1]*2+1]+$trnz[$j+ 5]) % 3,
@@ -342,7 +370,7 @@ sub TernRube {
       ($edge[$trnz[$j+ 8]*2], $edge[$trnz[$j+ 8]*2+1],
        $edge[$trnz[$j+ 9]*2], $edge[$trnz[$j+ 9]*2+1],
        $edge[$trnz[$j+10]*2], $edge[$trnz[$j+10]*2+1],
-       $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1]) = 
+       $edge[$trnz[$j+11]*2], $edge[$trnz[$j+11]*2+1]) =
       ($edge[$trnz[$j+11]*2],($edge[$trnz[$j+11]*2+1]+$trnz[$j+15]) % 2,
        $edge[$trnz[$j+ 8]*2],($edge[$trnz[$j+ 8]*2+1]+$trnz[$j+12]) % 2,
        $edge[$trnz[$j+ 9]*2],($edge[$trnz[$j+ 9]*2+1]+$trnz[$j+13]) % 2,
@@ -351,15 +379,15 @@ sub TernRube {
   }
   DrawRube();
 }
-
 sub DrawRube {
   my $tscr = $tmpl; # temp scrn to parse template for drawing
   my $last = $nstk; # storing last used color attribute to avoid repeats
   my @scrn = (); my @attz = (); # Simp screen array && attribute/colr array
   my $k = 0; # index of line number for building @scrn && @attz
   my @sidz = (); # a 6 x 9 array of sticker colors for each face segment
-  my $data = join('', @corn); $data .= join('', @edge); 
-  #`./pr $data`; # pr will someday PackRubes into a compressed format
+  my $data = join('', @corn); $data .= b64($_) for(@edge);
+  my $test = `./pr $data`; # pr PacksRubes into a compressed format
+  my $tdat = `./pr $test`; # pr PacksRubes into a compressed format
   for($i = 0; $i <  6; $i++) { $sidz[$i*9+4] = $colr[$i]; } # fill centers
   for($i = 0; $i < 12; $i++) {                              # load edges
     $sidz[$endx[$i*2+0]] = $colr[$ecol[$edge[$i*2]*2+($edge[$i*2+1]+0)%2]];
@@ -374,16 +402,17 @@ sub DrawRube {
   while($tscr =~ s/(.)//) {
     $i = $1;
     if(defined($i) && length($i)) {
-      if     ($i eq '@') { 
+      if     ($i eq '@') {
         if($k) { $scrn[$k] =~ s/^.//; $attz[$k] =~ s/^.//; }
         $k++;
       } elsif($i eq '^') { $j = 1;
       } elsif($i eq '$') { $j = 0;
       } elsif(!$j && $i =~ /\w/) {
-        $i = b10($i); 
+        $i = b10($i);
         $last = $sidz[$i] if($last ne $sidz[$i]);
         $last = 'U' if($last eq 'B'); # convert blUe
-        $scrn[$k] .= $sidz[$i];
+        if($filc) { $scrn[$k] .= $fchr;     }
+        else      { $scrn[$k] .= $sidz[$i]; }
         $attz[$k] .= $last;
       } else {
         $last = $prmp if($last ne $prmp &&  $j);
@@ -393,12 +422,24 @@ sub DrawRube {
       }
     }
   }
-  $scrn[0] = " $name v$mjvr.$mnvr.$ptvr - by $auth   keys: wrybog WRYBOG 012345 m i x=eXit";
-  $attz[0] = ' ' . 'G' x length($name) . 'BWYWCW' . ptcc() . 'BUBWWBGGGWYYYYWCCC' .                                              'BBBGGGGPBWRYUOGBWRYUOGBWRYUOGBCBPBWwWWWW';
-  $simp->Draw('text' => \@scrn, 'colr' => \@attz);
+  unless(length($scrn[0]) && $scrn[0] =~ /^ $name/) {
+    $scrn[0] = " $name v$mjvr.$mnvr.$ptvr - by $auth   keys: wrybog WRYBOG 012345 a f m i x=eXit";
+    $attz[0] = ' ' . 'G' x length($name) . 'KWYWCW' . 'ROYGCBP' .
+      'KBKWWKGGGWYYYYWCCC' . 'KKKGGGGPKWRYBOGKWRYBOGKWRYBOGKRKCKPKGKWwWWWW';
+  }
+  push(@scrn, '', "$data $test", $tdat);
+  push(@scrn, '', '  !*EROR*!') if($data ne $tdat); # need to find && fix pr errors
+  $simp->Draw('text' => \@scrn, 'fclr' => \@attz);
+  if($data ne $tdat) { open(EROR, '>>', 'pr_eror.txt'); print EROR "$data $test\n$tdat\n"; close(EROR); $simp->GetK(-1); }
 }
-
-TernRube(); 
-while(ord($qiii) != 27 && lc($qiii) ne 'x' && lc($qiii) ne 'q') { 
-  $qiii = $simp->GetK(-1); TernRube(); 
+TernRube();
+while(ord($qiii) != 27 && lc($qiii) ne 'x' && lc($qiii) ne 'q') {
+  $qiii = $simp->GetK(-1); TernRube();
+  if     (   $qiii  eq 'KEY_F1' ||
+             $qiii  eq '?'      ||
+          lc($qiii) eq 'h') { ShowHelp();
+  } elsif(   $qiii  eq 'I') { ShowInfo();
+  } elsif(lc($qiii) eq 'f') { $filc ^= 1; DrawRube();
+  } elsif(lc($qiii) eq 'a') { ($colr[2], $colr[3])=($colr[3], $colr[2]); DrawRube();
+  }
 }

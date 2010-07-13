@@ -23,4 +23,4 @@
                 \BBB|OO/                            \ZZZZZZZ/               @
                     -                                   -                   @
 ^ Turns:  Clockwise = wrybog    CounterClockwise = WRYBOG    Twice = 012345 @
-^    Mix = m    Init = i    Exit = x                     Please Press A Key:$
+^  AltColrSet = a  Fill = f  Mix = m  Init = i  Exit = x  Please Press A Key:$

@@ -1,16 +1,23 @@
-/* QbixRube.cpp - a Rubik's Cube game by Pip Stuart <Pip@CPAN.Org>
-     OpenGL stuff adapted from Jeff Molofee's great tutorials:
-       http://nehe.gamedev.net
+/* This is *BBC*PipTigger's QbixRube program!
+     GL stuffs adapted from Jeff Molofee's great tutorials: nehe.gamedev.net
+   Email PipTigger@BloodyBastardClan.org if you wanna fight! ... TTFN.
 */
 /* Notez:
 Left to do:
-    fix flipmode bug! r&o, r&g, g&o, o&b, o&g&r&b! ...?, YIKES!
-    mousiez, save/load rube (to filez),
-    better purple input focus, text in foreground, fix demomode,
-    count moves to solution, save solution to file,
-    backspace to enter input mode without reiniting rube, timer,
-    make luts for solving other front sides, speed or slow rots (*2||/2),
+    mousiez (direct input is yucky!),
+    solve any front side (needs werqie!),
+    save/load rube to disk filez, (I thinq I'm done with rubes for a while)
+    save solution to file,
+    count moves to solution,
+    better purple input focus,
+    smooth rotate to each input focus,
+    text in foreground, (or font textured front-facing polys)
+    instructions/help text/directions/etc.,
+    fix demomode, write a timer (and use in demo),
+    backspace to enter input mode without reiniting rube,
     add textured rotating backround,
+    break out into separate source filez (just one is too big),
+    port all to Java3D for applet stylz (if Java3D will ever werq!),
 Serch space... save serch... smooth alin =(
 
 for compressed storage for exhaustive serching, remove spaces already taken
@@ -68,6 +75,49 @@ be terned any of 3 ways but a different side must be terned next
 therefore every move of depth has 15 possibilities which fits nicely in
 4bits.  As long as you know the first move (0-17), every following tern
 can be succinctly described as a single hex digit (0-E).
+
+Holy smokes!  At 8192 bytes per directory, using a FAT filesystem is NOT
+the right way to subpartition the space!  ~190,000 possibilities would
+munch 1.5GB in just directories alone!  Minimize directories!  Maximize
+compressed flat files and lutlutluts!  How?  hmmm...
+
+The above compression would be great if I wanted to always squish whole
+rubes but for a nicely indexed solution space, I need a sequential space
+of all possible rubes to look up a direct && optimal solution for any
+current space.  I need a function that returns a unique identifier for
+any rube.  So maybe that identifier can be the above compressed
+representation of any rube.  It's gonna be a lot one way or another!
+
+Let's say that the average compressed rube is 72bits (9bytes)... it
+might be worthwhile to not silly compress so that all rubes are always
+76bits (9.5bytes) and can be aligned on 10byte boundaries in phat files.
+But the opportunity to shave around two bytes off each representation as
+the number of stored rubes gets huge is also terribly important.  The
+whole thing is worthless if it can't be serched quickly.  But a quick
+serch is also useless without a substantial amount of data... ok...
+
+I need a direct sequential index of all states.  A method for wasting no
+intermediate states so that state 0 is solved and state n.  Any of the
+24 possible positions for any corner or edge can be represented by
+letters A..X  NiceNice.  Any uncompressed Rube can be 20 A-X chars.
+
+What do I know about possible states?  Any piece can be anywhere and
+parity holds.  Therefore, I should always be able to determine the
+location AND pronation of c7 && e11.  I don't know of any other
+governing rules by which to determine solvability.
+
+The idea is to bruteforce depth-first from solved to populate a massive
+data structure which can be indexed directly from mixed back to moves to
+the optimal solution.
+
+I'm thinqing directories for e0-3,c0-3,e8-11... compression problem!
+The subdirs would subpartition the problem space at the cost of the
+saved space the compression could accomplish... I must implement it so
+flexibly that a whole spectrum of implementations can be evaluated.
+
+From the serch, I can check e0 && look for dir: if found, cd e0 && look
+for e1, else look for file beginning with e0(e1...etc.) er the file name
+should reflect the compressed method.
 */
 
 #include <windows.h>
@@ -76,7 +126,13 @@ can be succinctly described as a single hex digit (0-E).
 #include <gl\gl.h>
 #include <gl\glu.h>
 #include <gl\glaux.h>
+/*
+#include <dinput.h>
+//#include "dinput.h"
 
+LPDIRECTINPUT7              g_DI;
+LPDIRECTINPUTDEVICE7        g_KDIDev;
+*/
 HDC             hDC=NULL;
 HGLRC           hRC=NULL;
 HWND            hWnd=NULL;
@@ -87,18 +143,20 @@ GLuint  base;
 bool    keys[256];
 bool    active=TRUE;
 bool    fullscreen=TRUE;
+bool    rubemode=TRUE;
 bool    bluemode=FALSE;
 bool    dbugmode=FALSE;
 bool    helpmode=FALSE;
 bool    demomode=FALSE;
 bool    inptmode=FALSE;
+bool    invemode=FALSE;
 bool    alinmode=FALSE;
 bool    twrlmode=FALSE;
 bool    flipmode=FALSE;
 bool    solvwhol=FALSE;
 bool    showtext=FALSE;
 bool    light,lp,tp,fp,mp,sp,dp,up,qp,ip,jp,kp,ap;
-bool    f1p,f2p,f3p,f4p,f7p,f8p,f9p,entp,bksp;
+bool    f1p,f2p,f3p,f4p,f5p,f6p,f7p,f8p,f9p,entp,bksp;
 
 GLfloat gapp = 2.09f; //2.03 for newwdrawpiec
 GLfloat crot = 1.0f;
@@ -106,20 +164,42 @@ GLfloat xrot = 0.0f;
 GLfloat yrot = 0.0f;
 GLfloat xspd = 0.0f;
 GLfloat yspd = 0.0f;
-GLfloat zdep = -15.0f;
-GLfloat z    = -15.0f;
+GLfloat zdep = -16.7f;
+GLfloat z    = -16.7f;
 
 GLfloat LightAmbient[]=         { 0.7f, 0.7f, 0.7f, 1.0f };
 GLfloat LightDiffuse[]=		{ 1.0f, 1.0f, 1.0f, 1.0f };
 GLfloat LightPosition[]=	{ 0.0f, 0.0f, 2.0f, 1.0f };
 
 //this is a lut for lefts... indexes are [front][up] ... 6 == !-e
-GLuint leftable[6][6]= { 6,2,4,6,5,1, 5,6,0,2,6,3, 1,3,6,4,0,6,
-                         6,5,1,6,2,4, 2,6,3,5,6,0, 4,0,6,1,3,6 };
+GLuint leftable[6][6]=    { 6,2,4,6,5,1, 5,6,0,2,6,3, 1,3,6,4,0,6,
+                            6,5,1,6,2,4, 2,6,3,5,6,0, 4,0,6,1,3,6 };
+GLuint cornmapp[6][6][8]= { 15,15,15,15,15,15,15,15, 0,1,2,3,4,5,6,7, 3,0,1,2,7,4,5,6,
+                            15,15,15,15,15,15,15,15, 2,3,0,1,6,7,4,5, 1,2,3,0,5,6,7,4,
+                            1,0,6,7,5,4,2,3, 15,15,15,15,15,15,15,15, 0,6,7,1,4,2,3,5,
+                            6,7,1,0,2,3,5,4, 15,15,15,15,15,15,15,15, 7,1,0,6,3,5,4,2,
+                            0,3,5,6,4,7,1,2, 6,0,3,5,2,4,7,1, 15,15,15,15,15,15,15,15,
+                            5,6,0,3,1,2,4,7, 3,5,6,0,7,1,2,4, 15,15,15,15,15,15,15,15,
+                            15,15,15,15,15,15,15,15, 7,6,5,4,3,2,1,0, 6,5,4,7,2,1,0,3,
+                            15,15,15,15,15,15,15,15, 5,4,7,6,1,0,3,2, 4,7,6,5,0,3,2,1,
+                            3,2,4,5,7,6,4,1, 15,15,15,15,15,15,15,15, 5,3,2,4,1,7,6,0,
+                            4,5,3,2,4,1,7,6, 15,15,15,15,15,15,15,15, 2,4,5,3,6,0,1,7,
+                            2,1,7,4,6,5,3,0, 1,7,4,2,5,3,0,6, 15,15,15,15,15,15,15,15,
+                            7,4,2,1,3,0,6,5, 4,2,1,7,0,6,5,3, 15,15,15,15,15,15,15,15 };
+GLuint edgemapp[6][6][12]={ 15,15,15,15,15,15,15,15,15,15,15,15, 0,1,2,3,4,5,6,7,8,9,10,11, 3,0,1,2,7,4,5,6,11,8,9,10,
+                            15,15,15,15,15,15,15,15,15,15,15,15, 2,3,0,1,6,7,4,5,10,11,8,9, 1,2,3,0,5,6,7,4,9,10,11,8,
+                            0,8,6,9,4,10,2,11,1,3,5,7, 15,15,15,15,15,15,15,15,15,15,15,15, 8,6,9,0,10,2,11,4,3,5,7,1,
+                            6,9,0,8,2,11,4,10,5,7,1,3, 15,15,15,15,15,15,15,15,15,15,15,15, 9,0,8,6,11,4,10,2,7,1,3,5,
+                            3,11,5,8,7,9,1,10,0,2,4,6, 8,3,11,5,10,7,9,1,6,0,2,4, 15,15,15,15,15,15,15,15,15,15,15,15,
+                            5,8,3,11,1,10,7,9,4,6,0,2, 11,5,8,3,9,1,10,7,2,4,6,0, 15,15,15,15,15,15,15,15,15,15,15,15,
+                            15,15,15,15,15,15,15,15,15,15,15,15, 6,5,4,7,2,1,0,3,9,8,11,10, 5,4,7,6,1,0,3,2,8,11,10,9,
+                            15,15,15,15,15,15,15,15,15,15,15,15, 4,7,6,5,0,3,2,1,11,10,9,8, 7,6,5,4,3,2,1,0,10,9,8,11,
+                            2,10,4,11,6,8,0,9,3,1,7,5, 11,2,10,4,9,6,8,0,5,3,1,7, 15,15,15,15,15,15,15,15,15,15,15,15,
+                            4,11,2,10,0,9,6,8,7,5,3,1, 10,4,11,2,8,0,9,6,1,7,5,3, 15,15,15,15,15,15,15,15,15,15,15,15 };
 char *colznamz[8] = { "White", "Red", "Blue", "Yellow", "Orange", "Green",
                                     "DoesNotExist", "InputPerple" };
-char *ternnamz[18] = { "W ", "W2", "W-", "R ", "R2", "R-", "B ", "B2", "B-",
-                       "Y ", "Y2", "Y-", "O ", "O2", "O-", "G ", "G2", "G-" };
+char *ternnamz[18] = { "W+", "W2", "W-", "R+", "R2", "R-", "B+", "B2", "B-",
+                       "Y+", "Y2", "Y-", "O+", "O2", "O-", "G+", "G2", "G-" };
 char   *kakachar;
 GLfloat kakaglfl;
 GLfloat sidecolz[8][3]=         { 0.9f,0.9f,0.9f, //WRBYOG newer color map
@@ -159,8 +239,8 @@ GLuint bqu1corn[10][2]=          { 0, 0,  1, 0,  2, 0,  3, 0,
 GLuint bqu1edge[14][2]=         { 0, 0,  1, 0,  2, 0,  3, 0,
                                   4, 0,  5, 0,  6, 0,  7, 0,
                                   8, 0,  9, 0,  10,0,  11,0,    12,0,  13,0 };
-GLuint centcent[6][3]=          { 6,6,0, 6,6,1, 2,6,6,
-                                  6,6,3, 6,6,4, 5,6,6 };
+GLuint centcent[6][3]=          { 6,6,0, 6,1,6, 2,6,6,
+                                  6,6,3, 6,4,6, 5,6,6 };
 GLuint centcorn[8][3]=          { 2,1,0, 5,1,0, 5,4,0, 2,4,0,
                                   5,4,3, 2,4,3, 2,1,3, 5,1,3 };
 GLuint corncolr[10][3]=         { 0,1,2, 0,5,1, 0,4,5, 0,2,4,  //clok
@@ -171,7 +251,6 @@ GLuint centedge[12][3]=         { 6,1,0, 5,6,0, 6,4,0, 2,6,0,   //clok
 GLuint edgecolr[14][2]=         { 0,1, 0,5, 0,4, 0,2,   //clok
                                   3,4, 3,2, 3,1, 3,5,   //coun on oppedge
                                   1,2, 1,5, 4,5, 4,2, 6,6, 7,7 }; //clok on mid ring
-                                                        // w/ main in 1&&4
 GLuint corntern[6][4]= { 0,3,2,1,  0,1,7,6,  0,6,5,3,
                          4,5,6,7,  4,2,3,5,  4,7,1,2 };
 GLuint edgetern[6][4]= { 0,3,2,1,  0,9,6,8,  3,8,5,11,
@@ -180,8 +259,8 @@ GLuint cornpron[6][4]= { 0,0,0,0,  2,1,2,1,  1,2,1,2,
                          0,0,0,0,  1,2,1,2,  2,1,2,1 };
 GLuint edgepron[6][4]= { 0,0,0,0,  1,1,1,1,  0,0,0,0,
                          0,0,0,0,  1,1,1,1,  0,0,0,0 };
-GLfloat centrota[6][3]= { 0.0f,0.0f,0.0f,    -90.0f,0.0f,90.0f, 0.0f,-90.0f,-90.0f,
-                          180.0f,0.0f,0.0f, 90.0f,0.0f,-90.0f, 0.0f,90.0f,-90.0f };
+GLfloat centrota[6][3]= { 0.0f,0.0f,0.0f,    90.0f,180.0f,-90.0f, 0.0f,-90.0f,-90.0f,
+                          180.0f,0.0f,0.0f, -90.0f,180.0f,90.0f, 0.0f,90.0f,-90.0f };
 GLfloat inptrota[8][2]=         { 0.0f,0.0f,     0.0f,-90.0f,
                                   -90.0f,-90.0f, -90.0f,0.0f,
                                   -90.0f,180.0f, -90.0f,90.0f,
@@ -278,10 +357,14 @@ GLuint  tlstmaxx = 4095;
 GLuint  ternlist[4096];
 GLuint  mixxmaxx = 32;
 GLuint  loopcoun = 0;
-GLuint  sequfron = 0;
-GLuint  sequuppp = 1;
 GLuint  sequndxx = 0;
 GLuint  sequmaxx = 12;
+GLuint  sequfron = 0;
+GLuint  sequuppp = 1;
+GLuint  solvfron = 0;
+GLuint  solvuppp = 1;
+GLuint  bqupfron = 0;
+GLuint  bqupuppp = 1;
 GLuint  inptcoun = 0;
 GLuint  baddtopp = 0;
 GLuint  alinsihd = 6;
@@ -412,13 +495,42 @@ GLvoid rubepiec(GLvoid) { // take rube spaces and map them to pieces
         piecedge[rubeedge[j][0]][0] = j;
         piecedge[rubeedge[j][0]][1] = rubeedge[j][1];
     }
-    for (i=0;i<10;i++) { // later this should actually index by sequfron&&uppp
-        solvcorn[i][0] = pieccorn[i][0];
-        solvcorn[i][1] = pieccorn[i][1];
+/*
+    for (i=0;i<10;i++) {
+        solvcorn[cornmapp[solvfron][solvuppp][i]][0] = rubecorn[i][0];
+        solvcorn[cornmapp[solvfron][solvuppp][i]][1] = rubecorn[i][1];
     }
     for (j=0;j<14;j++) {
-        solvedge[j][0] = piecedge[j][0];
-        solvedge[j][1] = piecedge[j][1];
+        solvedge[edgemapp[solvfron][solvuppp][j]][0] = rubeedge[j][0];
+        solvedge[edgemapp[solvfron][solvuppp][j]][1] = rubeedge[j][1];
+    }
+
+    for (i=0;i<10;i++) {
+        solvcorn[i][0] = rubecorn[cornmapp[solvfron][solvuppp][i]][0];
+        solvcorn[i][1] = rubecorn[cornmapp[solvfron][solvuppp][i]][1];
+    }
+    for (j=0;j<14;j++) {
+        solvedge[j][0] = rubeedge[edgemapp[solvfron][solvuppp][j]][0];
+        solvedge[j][1] = rubeedge[edgemapp[solvfron][solvuppp][j]][1];
+    }
+
+    for (i=0;i<10;i++) {
+        solvcorn[cornmapp[solvfron][solvuppp][i]][0] = pieccorn[i][0];
+        solvcorn[cornmapp[solvfron][solvuppp][i]][1] = pieccorn[i][1];
+    }
+    for (j=0;j<14;j++) {
+        solvedge[edgemapp[solvfron][solvuppp][j]][0] = piecedge[j][0];
+        solvedge[edgemapp[solvfron][solvuppp][j]][1] = piecedge[j][1];
+    }
+
+*/
+    for (i=0;i<10;i++) {
+        solvcorn[i][0] = pieccorn[cornmapp[solvfron][solvuppp][i]][0];
+        solvcorn[i][1] = pieccorn[cornmapp[solvfron][solvuppp][i]][1];
+    }
+    for (j=0;j<14;j++) {
+        solvedge[j][0] = piecedge[edgemapp[solvfron][solvuppp][j]][0];
+        solvedge[j][1] = piecedge[edgemapp[solvfron][solvuppp][j]][1];
     }
 }
 
@@ -490,12 +602,10 @@ GLvoid inptrube(GLvoid) { // specify your own rube ... to be solved =)
 }
 
 GLvoid queutern(GLuint tern) { // load a single move into the ternqueu
+    if (solvwhol) { tern = (solvfron * 6 + tern) % 18; }
     if (tquesize < tquemaxx) { //load tern
         ternqueu[tquesize++] = tern;
-ternqueu[tquesize] = 0; //showend
-ternqueu[tquesize+1] = 0; //showend
-ternqueu[tquesize+2] = 0; //showend
-ternqueu[tquesize+3] = 0; //showend
+        for (GLuint i=tquesize;i<tquesize+32;i++) { ternqueu[i] = 0; } // for cosmetics
     }
 }
 
@@ -507,20 +617,9 @@ GLvoid queusequ(GLuint squn) { // load a sequence into the ternqueu
     relasidz[0] = sequfron; relasidz[1] = sequuppp; relasidz[2] = leftable[sequfron][sequuppp];
     if (relasidz[2] > 5) { relasidz[0] = 0; relasidz[1] = 1; relasidz[2] = 2; }
     for (i=3;i<6;i++) { relasidz[i] = (relasidz[i-3]+3) % 6; }
-//    tquesize = 0;
-/*
-    if (solvwhol) {
-        for (i=solvsequ[squn][0];i>0;i--) { //load queu inversely
-            ternqueu[tquesize++] = relasidz[solvsequ[squn][2*i-1]]*3 + solvsequ[squn][2*i];
-        }
-    } else {
-*/
-        for (i=sequence[squn][0];i>0;i--) { //load queu inversely
-            ternqueu[tquesize++] = relasidz[sequence[squn][2*i-1]]*3 + sequence[squn][2*i];
-        }
-//    }
-//    tquesize = sequence[squn][0];
-// Is tquesize one too many here?
+    for (i=sequence[squn][0];i>0;i--) { //load queu inversely
+        ternqueu[tquesize++] = relasidz[sequence[squn][2*i-1]]*3 + sequence[squn][2*i];
+    }
 }
 
 GLvoid queuslvs(GLuint squn) { // load a sequence into the ternqueu
@@ -532,97 +631,102 @@ GLvoid queuslvs(GLuint squn) { // load a sequence into the ternqueu
     if (relasidz[2] > 5) { relasidz[0] = 0; relasidz[1] = 1; relasidz[2] = 2; }
     for (i=3;i<6;i++) { relasidz[i] = (relasidz[i-3]+3) % 6; }
     tquesize = 0; //empty it out!
-for (i=0;i<32;i++) { ternqueu[i] = 0; } // for cosmetics
+    for (i=0;i<32;i++) { ternqueu[i] = 0; } // for cosmetics
     for (i=solvsequ[squn][0];i>0;i--) { //load queu inversely
         ternqueu[tquesize++] = relasidz[solvsequ[squn][2*i-1]]*3 + solvsequ[squn][2*i];
     }
     tquesize = solvsequ[squn][0];
-// Is tquesize one too many here?
 }
 
 GLvoid drawtext(GLvoid) {
     if (helpmode) {
         glPushMatrix();
-        glTranslatef(2.0f,15.0f,-5.0f);
+        glTranslatef(3.0f,16.0f,-5.0f);
         glColor3f(0.7f,0.8f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("*!*HELP*!*  press F1 to quit  *!*HELP*!*");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,14.0f,-5.0f);
+        glTranslatef(3.0f,15.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("wWrRbByYoOgG-RotateSides arrows-RotaRube");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,13.0f,-5.0f);
+        glTranslatef(3.0f,14.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("m-Mixx, s-Solv, t-Text, Spc-Halt,F5-Init");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,12.0f,-5.0f);
+        glTranslatef(3.0f,13.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("i-Inpt, f-Frnt, u-Uppp, q-Sequ, Ent-Exec");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,11.0f,-5.0f);
+        glTranslatef(3.0f,12.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("z-Zoom, x-Gapp, F1-Help,F2-Lite,F3-Filt");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,10.0f,-5.0f);
+        glTranslatef(3.0f,11.0f,-5.0f);
+        glColor3f(0.5f,0.9f,0.6f);
+        glRasterPos2f(1.0f,1.0f);
+        glPrint("a-Speed/Slow, F4-ToggleRube,F6-TradeBack");
+        glPopMatrix();
+        glPushMatrix();
+        glTranslatef(3.0f,10.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("d-Demo, F7-QuiqSave,F8-QuiqLoad,F9-BlueMode");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,9.0f,-5.0f);
+        glTranslatef(3.0f,9.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
-        glPrint("Shift usually inverts the operation!");
+        glPrint("Shift usually inverts an operation!");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,5.0f,-5.0f);
+        glTranslatef(3.0f,6.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("                                     TTFN!");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,1.0f,-5.0f);
+        glTranslatef(3.0f,2.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("                                     Pip@ ");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,0.0f,-5.0f);
+        glTranslatef(3.0f,1.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("                                     Razor");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,-1.0f,-5.0f);
+        glTranslatef(3.0f,0.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("                                     Storm");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,-2.0f,-5.0f);
+        glTranslatef(3.0f,-1.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("                                      .net");
         glPopMatrix();
     } else if (demomode) {
         glPushMatrix();
-        glTranslatef(2.0f,15.0f,-5.0f);
+        glTranslatef(3.0f,16.0f,-5.0f);
         glColor3f(0.7f,0.8f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("*!*DEMO*!*  press D to quit  *!*DEMO*!*");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,14.0f,-5.0f);
+        glTranslatef(3.0f,15.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         if (tquesize && !solvwhol) {
@@ -635,32 +739,32 @@ GLvoid drawtext(GLvoid) {
         glPopMatrix();
     } else if (inptmode) {
         glPushMatrix();
-        glTranslatef(2.0f,15.0f,-5.0f);
+        glTranslatef(3.0f,16.0f,-5.0f);
         glColor3f(0.7f,0.8f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("*!*INPUT*!*  press I to quit  *!*INPUT*!*");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,14.0f,-5.0f);
+        glTranslatef(3.0f,15.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("Input the Purple Piece: j&J-scrolls pieces,");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,13.0f,-5.0f);
+        glTranslatef(3.0f,14.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("k&K-rotates piece in place, l-submits piece ");
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,12.0f,-5.0f);
+        glTranslatef(3.0f,13.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint(" Backspace goes back to the previous piece  ");
         glPopMatrix();
     } else if (dbugmode) {
         glPushMatrix();
-        glTranslatef(2.0f,15.0f,-5.0f);
+        glTranslatef(3.0f,16.0f,-5.0f);
         glColor3f(0.3f,1.0f,0.7f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("cornz:%d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d ",
@@ -674,7 +778,7 @@ GLvoid drawtext(GLvoid) {
                                             rubecorn[7][0], rubecorn[7][1]);
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,14.0f,-5.0f);
+        glTranslatef(3.0f,15.0f,-5.0f);
         glColor3f(0.7f,1.0f,0.3f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("edgez:%d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d ",
@@ -692,14 +796,14 @@ GLvoid drawtext(GLvoid) {
                                             rubeedge[11][0], rubeedge[11][1]);
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,13.0f,-5.0f);
+        glTranslatef(3.0f,14.0f,-5.0f);
         glColor3f(0.7f,0.3f,1.0f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("centz:%3.0fw %3.0fr %3.0fb %3.0fy %3.0fy %3.0fg ",
             rubecent[0], rubecent[1], rubecent[2], rubecent[3], rubecent[4], rubecent[5]);
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,12.0f,-5.0f);
+        glTranslatef(3.0f,13.0f,-5.0f);
         glColor3f(0.1f,0.3f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("tqsiz:%d tqueu:%d %d %d %d %d %d %d %d ", tquesize, ternqueu[0], ternqueu[1],
@@ -707,20 +811,20 @@ GLvoid drawtext(GLvoid) {
         glPopMatrix();
     } else {
         glPushMatrix();
-        glTranslatef(2.0f,15.0f,-5.0f);
+        glTranslatef(3.0f,16.0f,-5.0f);
         glColor3f(0.5f,0.9f,0.6f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("Front: %s  Up: %s  Left: %s ", colznamz[sequfron], colznamz[sequuppp], colznamz[leftable[sequfron][sequuppp]]);
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,14.0f,-5.0f);
+        glTranslatef(3.0f,15.0f,-5.0f);
         glColor3f(0.1f,0.3f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("Sequence#%d: %s ", sequndxx, sequnamz[sequndxx]);
         glPopMatrix();
 /*
         glPushMatrix();
-        glTranslatef(2.0f,13.0f,-5.0f);
+        glTranslatef(3.0f,14.0f,-5.0f);
         glColor3f(0.1f,0.6f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("qsiz: %d queu:%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d ",
@@ -730,7 +834,7 @@ GLvoid drawtext(GLvoid) {
             ternqueu[12], ternqueu[13], ternqueu[14], ternqueu[15]);
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,12.0f,-5.0f);
+        glTranslatef(3.0f,13.0f,-5.0f);
         glColor3f(0.1f,0.6f,0.5f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("pcrn:%d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d ",
@@ -740,7 +844,7 @@ GLvoid drawtext(GLvoid) {
             pieccorn[6][0], pieccorn[6][1], pieccorn[7][0], pieccorn[7][1]);
         glPopMatrix();
         glPushMatrix();
-        glTranslatef(2.0f,12.0f,-5.0f);
+        glTranslatef(3.0f,13.0f,-5.0f);
         glColor3f(0.3f,1.0f,0.7f);
         glRasterPos2f(1.0f,1.0f);
         glPrint("crnz:%d%d %d%d %d%d %d%d %d%d %d%d %d%d %d%d ",
@@ -750,19 +854,20 @@ GLvoid drawtext(GLvoid) {
             rubecorn[6][0], rubecorn[6][1], rubecorn[7][0], rubecorn[7][1]);
         glPopMatrix();
 */
-        GLuint i,j,k;
+        GLuint i,j,k,l;
         if (tlstsize) {
-            for (i=0;i<20;i++) {    // 4
-                if (tlstsize + i < 20) { i += 20 - tlstsize; }
-                glPushMatrix();
-                glTranslatef(2.0f,16.0f-20+i,-5.0f);
-                k = tlstsize - 20 + i;
-                j = int (ternlist[k] / 3);
-                glColor3f(sidecolz[j][0],sidecolz[j][1],sidecolz[j][2]);
-                glRasterPos2f(1.0f,1.0f);
-                glPrint("                                          %s",
-                    ternnamz[ternlist[k]]);
-                glPopMatrix();
+            for (l=0;l<tlstsize;l+=25) {
+                for (i=0;i<25;i++) {    // 4
+                    if (tlstsize + i < l+25) { i += 25 - (tlstsize-l); }
+                    glPushMatrix();
+                    glTranslatef(-31.0f+l/10,18.0f-25+i,-5.0f);
+                    k = tlstsize - 25 + i;
+                    j = int (ternlist[k-l] / 3);
+                    glColor3f(sidecolz[j][0],sidecolz[j][1],sidecolz[j][2]);
+                    glRasterPos2f(1.0f,1.0f);
+                    glPrint("%s", ternnamz[ternlist[k-l]]);
+                    glPopMatrix();
+                }
             }
         }
     }
@@ -995,44 +1100,51 @@ int drawrube(GLvoid) {
     rubecent[centedge[11][1]] *= -1.0f;
     rubecent[centedge[12][1]] *= -1.0f;
     rubecent[1] *= -1.0f;
-    rubecent[3] *= -1.0f;
 /* */
+    rubecent[4] *= -1.0f;
     for(GLuint k=0;k<6;k++) { //6 centz
         glPushMatrix();
-        glRotatef(-rubecent[centcent[k][0]]+centrota[k][0],1.0f,0.0f,0.0f);
-        glRotatef(-rubecent[centcent[k][1]]+centrota[k][1],0.0f,1.0f,0.0f);
-        glRotatef(-rubecent[centcent[k][2]]+centrota[k][2],0.0f,0.0f,1.0f);
+        glRotatef(-rubecent[centcent[k][0]],1.0f,0.0f,0.0f);
+        glRotatef(-rubecent[centcent[k][1]],0.0f,1.0f,0.0f);
+        glRotatef(-rubecent[centcent[k][2]],0.0f,0.0f,1.0f);
+        glRotatef(centrota[k][0],1.0f,0.0f,0.0f);
+        glRotatef(centrota[k][1],0.0f,1.0f,0.0f);
+        glRotatef(centrota[k][2],0.0f,0.0f,1.0f);
         glTranslatef(0.0f,0.0f,gapp);
         drawpiec(k,6,6);
         glPopMatrix();
     }
     rubecent[2] *= -1.0f;
+    rubecent[3] *= -1.0f;
+    rubecent[4] *= -1.0f;
     return TRUE;
 }
 
 int DrawGLScene(GLvoid) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
-        glTranslatef(0.0f,0.0f,zdep);
-        glBindTexture(GL_TEXTURE_2D, texture[filter]);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    glTranslatef(0.0f,0.0f,zdep);
+    glBindTexture(GL_TEXTURE_2D, texture[filter]);
+    glPushMatrix();
+      if (invemode) { glRotatef(180.0f,0.0f,1.0f,0.0f); }
+      glRotatef(xrot+30,1.0f,0.0f,0.0f);
+      glRotatef(yrot+30,0.0f,1.0f,0.0f);
+      if (rubemode) { drawrube(); }
+    glPopMatrix();
+    glTranslatef(-12.0f,-8.0f,zdep);
+    glRotatef(195.0f,0.0f,1.0f,0.0f);
+    glPushMatrix(); //This one's mini-backside
+      glRotatef(15.0f,1.0f,0.0f,0.0f);
+      if (invemode) { glRotatef(180.0f,0.0f,1.0f,0.0f); }
+      glRotatef(xrot+30,1.0f,0.0f,0.0f);
+      glRotatef(yrot+30,0.0f,1.0f,0.0f);
+      glScalef(0.8f,0.8f,0.8f);
+      if (rubemode) { drawrube(); }
+    glPopMatrix();
+    if (showtext) { drawtext(); }
+    xrot+=xspd; yrot+=yspd;
 
-        glPushMatrix();
-          glRotatef(xrot+30,1.0f,0.0f,0.0f);
-          glRotatef(yrot+30,0.0f,1.0f,0.0f);
-          drawrube();
-        glPopMatrix();
-        glTranslatef(-11.0f,-7.0f,zdep);
-        glRotatef(195.0f,0.0f,1.0f,0.0f);
-        glPushMatrix(); //This one's mini-backside
-          glRotatef(xrot+30,1.0f,0.0f,0.0f);
-          glRotatef(yrot+30,0.0f,1.0f,0.0f);
-          glScalef(0.7f,0.7f,0.7f);
-          drawrube();
-        glPopMatrix();
-        if (showtext) { drawtext(); }
-        xrot+=xspd;
-        yrot+=yspd;
-        return TRUE;
+    return TRUE;
 }
 
 GLvoid laagloop() {
@@ -1233,21 +1345,23 @@ GLvoid solvnext(GLvoid) {
             if (baddtopp == 0) {
                 if (solvcorn[4][0] != 4) { queutern(9); //edge?
                 } else if (solvcorn[4][1] == 1) {
-                    sequfron = 5; sequuppp = 3; queusequ(8); baddtopp = 4;
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(8); baddtopp = 4;
                 } else if (solvcorn[4][1] == 2) {
-                    sequfron = 5; sequuppp = 3; queusequ(7); baddtopp = 8;
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(7); baddtopp = 8;
                 } else if (solvcorn[5][1] == 1) {
-                    sequfron = 4; sequuppp = 3; queusequ(8); baddtopp = 5;
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(8); baddtopp = 5;
                 } else if (solvcorn[5][1] == 2) {
-                    sequfron = 4; sequuppp = 3; queusequ(7); baddtopp = 10;
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(7); baddtopp = 10;
                 } else if (solvcorn[6][1] == 1) {
-                    sequfron = 2; sequuppp = 3; queusequ(8); baddtopp = 6;
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(8); baddtopp = 6;
                 } else if (solvcorn[6][1] == 2) {
-                    sequfron = 2; sequuppp = 3; queusequ(7); baddtopp = 12;
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(7); baddtopp = 12;
 //                } else if (solvcorn[7][1]) {
 // *** ERROR BAD Rube!  all solved but one twirl! quit solver
 //                    twrlmode = solvwhol = FALSE;
                     //erormesg = "***ERROR*** Invalid rube parity.  Impossible to solve!";
+                } else {
+                    twrlmode = FALSE;
                 }
             } else if (baddtopp == 4 || baddtopp == 8) {
                 if (solvcorn[5][1]) {
@@ -1303,22 +1417,22 @@ GLvoid solvnext(GLvoid) {
                         queutern(9);
                     }
                 }
-            } else {
-                twrlmode = FALSE;
             }
         } else if (flipmode) {
             if (baddtopp == 0) {
                 if (solvedge[4][0] != 4) { queutern(9); //corn?
                 } else if (solvedge[4][1] == 1) {
-                    sequfron = 4; sequuppp = 3; queusequ(9); baddtopp = 4;
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(9); baddtopp = 4;
                 } else if (solvedge[5][1] == 1) {
-                    sequfron = 2; sequuppp = 3; queusequ(9); baddtopp = 5;
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(9); baddtopp = 5;
                 } else if (solvedge[6][1] == 1) {
-                    sequfron = 1; sequuppp = 3; queusequ(9); baddtopp = 6;
+                    sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(9); baddtopp = 6;
 //                } else if (solvedge[7][1]) {
 // *** ERROR BAD Rube!  all solved but one flip! quit solver
 //                    flipmode = solvwhol = FALSE;
                     //erormesg = "***ERROR*** Invalid rube parity.  Impossible to solve!";
+                } else {
+                    flipmode = FALSE;
                 }
             } else if (baddtopp == 4) {
                 if (solvedge[5][1] == 1) {
@@ -1362,8 +1476,6 @@ GLvoid solvnext(GLvoid) {
                         queutern(9);
                     }
                 }
-            } else {
-                flipmode = FALSE;
             }
         } else {
 //*** solver stuff
@@ -1471,50 +1583,50 @@ GLvoid solvnext(GLvoid) {
                 }
             } else if (solvedge[8][0] != 8 || solvedge[8][1]) {
                 if (solvedge[8][0] == 8) {
-                    sequfron = 1; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[8][0] == 9) {
-                    sequfron = 5; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[8][0] == 10) {
-                    sequfron = 4; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[8][0] == 11) {
-                    sequfron = 2; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[8][0] == 6 && solvedge[8][1] == 0) {
-                    sequfron = 1; sequuppp = 3; queusequ(1);
+                    sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(1);
                 } else if (solvedge[8][0] == 7 && solvedge[8][1] == 1) {
-                    sequfron = 1; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else { queutern(9);
                 }
             } else if (solvedge[9][0] != 9 || solvedge[9][1]) {
                 if (solvedge[9][0] == 9) {
-                    sequfron = 5; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[9][0] == 10) {
-                    sequfron = 4; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[9][0] == 11) {
-                    sequfron = 2; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[9][0] == 7 && solvedge[9][1] == 1) {
-                    sequfron = 5; sequuppp = 3; queusequ(1);
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(1);
                 } else if (solvedge[9][0] == 4 && solvedge[9][1] == 0) {
-                    sequfron = 5; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else { queutern(9);
                 }
             } else if (solvedge[10][0] != 10 || solvedge[10][1]) {
                 if (solvedge[10][0] == 10) {
-                    sequfron = 4; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[10][0] == 11) {
-                    sequfron = 2; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[10][0] == 4 && solvedge[10][1] == 0) {
-                    sequfron = 4; sequuppp = 3; queusequ(1);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(1);
                 } else if (solvedge[10][0] == 5 && solvedge[10][1] == 1) {
-                    sequfron = 4; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else { queutern(9);
                 }
             } else if (solvedge[11][0] != 11 || solvedge[11][1]) {
                 if (solvedge[11][0] == 11) {
-                    sequfron = 2; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else if (solvedge[11][0] == 5 && solvedge[11][1] == 1) {
-                    sequfron = 2; sequuppp = 3; queusequ(1);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(1);
                 } else if (solvedge[11][0] == 6 && solvedge[11][1] == 0) {
-                    sequfron = 2; sequuppp = 3; queusequ(0);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(0);
                 } else { queutern(9);
                 }
             } else if (solvcorn[4][0] != 4 || solvcorn[5][0] != 5 ||
@@ -1527,20 +1639,20 @@ GLvoid solvnext(GLvoid) {
                 if (baddtopp > 2) { queutern(9);
                 } else if (solvcorn[4][0] == 4) {
                     if (solvcorn[5][0] == 5) {
-                        sequfron = 4; sequuppp = 3; queusequ(3);
+                        sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(3);
                     } else if (solvcorn[6][0] == 6) {
-                        sequfron = 2; sequuppp = 3; queusequ(2);
+                        sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(2);
                     } else if (solvcorn[7][0] == 7) {
-                        sequfron = 5; sequuppp = 3; queusequ(3);
+                        sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(3);
                     }
                 } else if (solvcorn[5][0] == 5) {
                     if (solvcorn[6][0] == 6) {
-                        sequfron = 2; sequuppp = 3; queusequ(3);
+                        sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(3);
                     } else if (solvcorn[7][0] == 7) {
-                        sequfron = 1; sequuppp = 3; queusequ(2);
+                        sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(2);
                     }
                 } else if (solvcorn[6][0] == 6 && solvcorn[7][0] == 7) {
-                    sequfron = 1; sequuppp = 3; queusequ(3);
+                    sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(3);
                 }
             } else if (solvedge[4][0] != 4 || solvedge[5][0] != 5 ||
                        solvedge[6][0] != 6 || solvedge[7][0] != 7) {
@@ -1550,25 +1662,27 @@ GLvoid solvnext(GLvoid) {
                 if (solvedge[6][0] != 6) { baddtopp++; }
                 if (solvedge[7][0] != 7) { baddtopp++; }
                 if (baddtopp == 4) {
-                    sequfron = 4; sequuppp = 3; queusequ(4);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(4);
                 } else if (solvedge[4][0] == 4) {
-                    sequfron = 5; sequuppp = 3; queusequ(4);
+                    sequfron = (solvfron + 5) % 6; sequuppp = (solvfron + 3) % 6; queusequ(4);
                 } else if (solvedge[5][0] == 5) {
-                    sequfron = 4; sequuppp = 3; queusequ(4);
+                    sequfron = (solvfron + 4) % 6; sequuppp = (solvfron + 3) % 6; queusequ(4);
                 } else if (solvedge[6][0] == 6) {
-                    sequfron = 2; sequuppp = 3; queusequ(4);
+                    sequfron = (solvfron + 2) % 6; sequuppp = (solvfron + 3) % 6; queusequ(4);
                 } else if (solvedge[7][0] == 7) {
-                    sequfron = 1; sequuppp = 3; queusequ(4);
+                    sequfron = (solvfron + 1) % 6; sequuppp = (solvfron + 3) % 6; queusequ(4);
                 }
-            } else if (solvcorn[4][1] != 0 || solvcorn[5][1] ||
-                       solvcorn[6][1] != 0 || solvcorn[7][1]) {
-                baddtopp = 0; twrlmode = TRUE;
+            } else if (solvcorn[4][1] != 0 || solvcorn[5][1] != 0 ||
+                       solvcorn[6][1] != 0 || solvcorn[7][1] != 0) {
+                baddtopp = 0; twrlmode = TRUE;  flipmode = FALSE;
             } else if (solvedge[4][1] != 0 || solvedge[5][1] != 0 ||
                        solvedge[6][1] != 0 || solvedge[7][1] != 0) {
-                baddtopp = 0; flipmode = TRUE;
+                baddtopp = 0; twrlmode = FALSE; flipmode = TRUE;
             } else {
                 //RUBE is solved!!!
                 solvwhol=twrlmode=flipmode=FALSE;
+                sequfron = bqupfron;
+                sequuppp = bqupuppp;
             }
         }
     }
@@ -1759,6 +1873,45 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
     }
     return TRUE;
 }
+
+/*
+// Initializes Direct Input ( Add )
+int DI_Init() {
+    if ( DirectInputCreateEx( hInstance,
+        DIRECTINPUT_VERSION,
+        IID_IDirectInput7,
+        (void**)&g_DI,
+        NULL ) )
+    { return(false); }
+
+    if ( g_DI->CreateDeviceEx( GUID_SysKeyboard,
+        IID_IDirectInputDevice7,
+        (void**)&g_KDIDev,
+        NULL ) )
+    { return(false); }
+
+    if ( g_KDIDev->SetDataFormat(&c_dfDIKeyboard) ) { return(false); }
+    if ( g_KDIDev->SetCooperativeLevel(hWnd, DISCL_FOREGROUND | DISCL_EXCLUSIVE) ) { return(false); }
+
+    if (g_KDIDev) { g_KDIDev->Acquire(); }
+    else { return(false); }
+
+    return(true);
+}
+
+// Destroys DX ( Add )
+void DX_End() {
+    if (g_DI) {
+        if (g_KDIDev) {
+            g_KDIDev->Unacquire();
+            g_KDIDev->Release();
+            g_KDIDev = NULL;
+        }
+        g_DI->Release();
+        g_DI = NULL;
+    }
+}
+*/
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -2011,8 +2164,16 @@ int WINAPI WinMain(     HINSTANCE       hInstance,
                     sp=TRUE;
                     solvwhol=!solvwhol;
                     tlstsize = 0;
-                    sequfron = 0; sequuppp = 1;
-                    if (solvwhol) { demomode=twrlmode=flipmode=FALSE; }
+                    if (solvwhol) {
+                        demomode=twrlmode=flipmode=FALSE;
+                        bqupfron = solvfron = sequfron;
+                        bqupuppp = solvuppp = sequuppp;
+solvfron = sequfron = 0; solvuppp = sequuppp = 1;
+// *** Solving with other fronts and ups doesn't werk! =(
+                    } else {
+                        sequfron = bqupfron;
+                        sequuppp = bqupuppp;
+                    }
                 }
                 if (!keys['S']) { sp=FALSE; }
                 if (keys['P']) { undotern(); }
@@ -2073,6 +2234,7 @@ int WINAPI WinMain(     HINSTANCE       hInstance,
 //                }
                 if (keys[VK_F1] && !f1p) {
                     f1p=TRUE;
+                    rubemode=helpmode;
                     showtext=helpmode=!helpmode;
                 }
                 if (!keys[VK_F1]) { f1p=FALSE; }
@@ -2091,9 +2253,11 @@ int WINAPI WinMain(     HINSTANCE       hInstance,
                 if (!keys[VK_F3]) { f3p=FALSE; }
                 if (keys[VK_F4] && !f4p) {
                     f4p=TRUE;
+                    rubemode=!rubemode;
                 }
                 if (!keys[VK_F4]) { f4p=FALSE; }
-                if (keys[VK_F5]) { //reinit
+                if (keys[VK_F5] && !f5p) { //reinit
+                    f5p=TRUE;
                     xrot=xspd=yrot=yspd=0.0f;
                     tlstsize=tquesize=0;
                     demomode=twrlmode=flipmode=solvwhol=FALSE;
@@ -2101,6 +2265,15 @@ int WINAPI WinMain(     HINSTANCE       hInstance,
                     for (m=0;m<8;m++) { rubecorn[m][0] = m; rubecorn[m][1] = 0; }
                     for (m=0;m<12;m++) { rubeedge[m][0] = m; rubeedge[m][1] = 0; }
                 }
+                if (!keys[VK_F5]) { f5p=FALSE; }
+                if (keys[VK_F6] && !f6p) {
+                    f6p=TRUE;
+                    invemode=!invemode;
+//                    xrot += (xrot-180);
+//                    yrot += 180.0f;
+//                    yrot += 195.0f;
+                }
+                if (!keys[VK_F6]) { f6p=FALSE; }
                 if (keys[VK_F7] && !f7p) {
                     f7p=TRUE;
                     bquprube(1);
