@@ -1,6 +1,9 @@
+NAME
+    Curses::Simp - Curses Not Quite Simple
+
 VERSION
-    This documentation refers to version 1.2.A7DDCh3 of Curses::Simp, which
-    was released on Tue Jul 13 13:12:43:03 2010.
+    This documentation refers to version 1.4.A8UG1gG of Curses::Simp, which
+    was released on Mon Aug 30 16:01:42:16 2010.
 
 SYNOPSIS
       use Curses::Simp;
@@ -19,17 +22,15 @@ DESCRIPTION
     for the common cases first and efficient rendering second.
 
 2DU
-    - figure out why ACS_ borders don't work anymore and restore as dfalt
     - mk proper scrollbars for all objects && use in Brws: view
+    - Brws: mk togl to pack files left && right in view
     - mk ~/.simprc to save CPik && Brws cfg, OVERMAPP, etc.
-    - 4NT: work on recognizing more keys the same as Curses (&& then SDL)
-    - 4NT: write custom window support? mk Mesg at least wrap MSGBOX
-    - Brws: read ~/.LS_COLORS if -r into GLBL{OVERMAPP}
     - CPik: rewrite BildBlox to scale style to window dims if !flagshrk &&
     mk sure no forg or bakg works for all styles... also add options for
     only name or number options or common grid size defaults
     - CPik: add styles to pick fgcl,bgcl color code at once
-    - Brws: mk togl to pack files left && right in view
+    - 4NT: work on recognizing more keys the same as Curses (&& then SDL)
+    - 4NT: write custom window support? mk Mesg at least wrap MSGBOX
     - describe Simp objects sharing apps (ptok above pmix) mk OScr read Simp
     apps @_ param list && auto-handle --geom wxh+x+y
     - Prmt: mk new 'cbls' type: as a ckbx list && use in BrwsCnfg
@@ -40,14 +41,14 @@ DESCRIPTION
     line prints relative to starting xcrs
     - Prmt: add multi-line option where dtxt can split on /\n/ && ^d accepts
     entry instead of RETURN
-    - Prnt: handle ascii chars under 32 with escapes like Draw
+    - Prnt: handle ASCII chars under 32 with escapes like Draw
     - Draw: optimize rendering
-    - Prnt&&Draw: handle ascii chars under 32 better than current escapes
+    - Prnt&&Draw: handle ASCII chars under 32 better than current escapes
     - mk 'ceol' && 'ceos' params to clear text[n] from cursor on
     - consider breaking sub (CPik|Brws|.+?) into own Curses::Simp::$1.pm
     instead of letting Simp.pm remain so cluttered
 
-                if detectable:
+            if detectable:
 
     - handle xterm resize events
     - handle mouse input (study any existent Curses apps that use mouse
@@ -470,9 +471,13 @@ ACCESSOR AND FLAG METHODS
     Interfaces" since they accomplish the goal of screen manipulation in a
     more Perl-friendly manner.
 
+   Text or TextData
+   FClr or ForegroundColorData
+   BClr or BackgroundColorData
   Loop Accessors
       BTyp or WindowBorderType # loop through border types
 
+   BTyp or WindowBorderType
   Normal Accessors
       Name or VerboseName                 # Description
       ----    -----------                 -------------
@@ -489,6 +494,18 @@ ACCESSOR AND FLAG METHODS
       TtBC or WindowTitleBackgroundColor  # title  bg color code string
       DNdx or DisplayStackIndex           # global display index
 
+   Hite or WindowHeight
+   Widt or WindowWidth
+   YOff or WindowYOffset
+   XOff or WindowXOffset
+   YCrs or CursorYOffset
+   XCrs or CursorXOffset
+   BrFC or WindowBorderForegroundColor
+   BrBC or WindowBorderBackgroundColor
+   Titl or WindowTitle
+   TtFC or WindowTitleForegroundColor
+   TtBC or WindowTitleBackgroundColor
+   DNdx or DisplayStackIndex
   Flag Accessors
       FlagName or VerboseFlagName Default # Description
       --------    --------------- ------- -------------
@@ -515,6 +532,56 @@ ACCESSOR AND FLAG METHODS
       FlagClrU or FlagColorUsed     0     # ColorUsed gets set automatically
         # when color codes are used and determines if internal dialogs have color
 
+   AuDr or FlagAuDr or FlagAutoDraw
+   ADTF or FlagADTF or FlagAutoDrawTiedForegroundData
+   ADTB or FlagADTB or FlagAutoDrawTiedBackgroundData
+   Down or FlagDown or FlagDropIsDown
+   Drop or FlagDrop or FlagDropDown
+   Insr or FlagInsr or FlagInsertMode
+   Maxi or FlagMaxi or FlagMaximize
+   Shrk or FlagShrk or FlagShrinkToFit
+   Cntr or FlagCntr or FlagCenter
+   CVis or FlagCVis or FlagCursorVisible
+   Scrl or FlagScrl or FlagScrollbar
+   SDLK or FlagSDLK or FlagSDLKey
+   Fram or FlagFram or FlagTimeFrame
+   Mili or FlagMili or FlagMillisecond
+   Prin or FlagPrin or FlagPrintInto
+   ClrU or FlagClrU or FlagColorUsed
+  Miscellaneous Accessors
+      Name     or VerboseName             # Description
+      --------    ----------------------- -------------
+      AttrNamz or AttributeNames          # list of available Simp Attributes
+      DfltValu or DefaultValues           # list of Default attribute Values
+      KQue     or KeyQueue                # list of ordered unhandled Key events
+      MQue     or KeyModQueue             # list of ordered unhandled modifiers
+      Focu     or FocusWindow             # changes Focus   to current Window
+      Updt     or UpdateWindow            # Updates display of current Window
+      CScr     or CloseScreen             # closes all opened Curses screens
+      # Note: CScr() is automatically called when any Simp program exits,
+      #   so explicit calls are probably unnecessary && redundant.
+      BordChar or PrintBorderCharacter    # utility to draw Border Characters
+      InitPair or InitializeColorPair     # utility to Initialize Color Pairs
+      MkMethdz or MakeMethods             # utility to Make many Methods
+      TestDraw                            # Tests whether AutoDraw is pending
+      BildBrws                            # utility to Build Browse dialogs
+      BrwsCdUp                            # utility to `cd ..` Browse directories
+      BrwsHelp                            # utility to print Browse Help
+
+   AttrNamz or AttributeNames
+   DfltValu or DefaultValues
+   KQue or KeyQueue
+   MQue or KeyModQueue
+   Focu or FocusWindow
+   Updt or UpdateWindow
+   CScr or CloseScreen
+   BordChar or PrintBorderCharacter
+   InitPair or InitializeColorPair
+   MkMethdz or MakeMethods
+   TestDraw
+   BildBrws
+   BrwsCdUp
+   BrwsHelp
   Accessor and Flag Method Usage Examples
       #!/usr/bin/perl -w
       use strict;
@@ -587,7 +654,7 @@ CURSES KEY NOTES
           KEY_SRESET               KEY_SRIGHT               KEY_SRSUME             
           KEY_SSAVE                KEY_SSUSPEND             KEY_STAB               
           KEY_SUNDO                KEY_SUSPEND              KEY_UNDO               
-          KEY_UP                   KEY_MOUSE                                       
+          KEY_UP                   KEY_MOUSE
 
 SDLKEY NOTES
     The GetKey() function has a special advanced mode of input. Instead of
@@ -784,6 +851,25 @@ COLOR NOTES
 CHANGES
     Revision history for Perl extension Curses::Simp:
 
+    - 1.4.A8UG1gG Mon Aug 30 16:01:42:16 2010
+        * t/00podc.t should pass now that my POD is updated to cover all
+        subs
+
+        * Brws: setup to read $ENV{'LS_COLORS'} into GLBL{OVERMAPP}
+
+        * fixed POD error that was failing on FreeBSD because items must
+        follow overs
+
+        * tested ACS_ borders working again, restored as dfalt, added new
+        ARROW bordset
+
+        * fixed Prmt handle Eterm BACKSPACE (ord(127)) like TTY (without
+        ndng Ctrl-BS)
+
+        * fixed FlagCVis (MkMethodz CRSR flag was accidentally set as CURS)
+
+        * updated license to GPLv3 and bumped minor version for the CPAN
+
     - 1.2.A7DDCh3 Tue Jul 13 13:12:43:03 2010
         * made B == Blue && K == blacK like RGB vs. CMYK
 
@@ -892,8 +978,8 @@ FILES
 
 LICENSE
     Most source code should be Free! Code I have lawful authority over is &&
-    shall be! Copyright: (c) 2002-2005, Pip Stuart. Copyleft : This software
-    is licensed under the GNU General Public License (version 2). Please
+    shall be! Copyright: (c) 2002-2010, Pip Stuart. Copyleft : This software
+    is licensed under the GNU General Public License (version 3). Please
     consult the Free Software Foundation (http://FSF.Org) for important
     information about your freedom.
 

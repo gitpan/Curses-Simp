@@ -10,7 +10,7 @@
 #   handle term resize events  (using Simp once supported),
 #   handle mouse events        (using Simp once supported),
 use strict; use warnings; use Curses::Simp; my $mixr = eval("use Audio::Mixer; 1") || 0; # Audio::Mixer is not full-featured so`ximp`tends2Bbetter
-my $mjvr = 1; my $mnvr = 0; my $ptvr = 'A6MLong'; my $name = $0; $name =~ s/.*\///; my $auth = 'Pip Stuart <Pip@CPAN.Org>';
+my $mjvr = 1; my $mnvr = 0; my $ptvr = 'A82IP82'; my $name = $0; $name =~ s/.*\///; my $auth = 'Pip Stuart <Pip@CPAN.Org>';
 my @dopt =('vol', 'cd', 'pcm' ); my @optz = @dopt; my %omap; my %limz; # Dfalt mode && initial device options
 my %slut =(   '!'=>1,    '@'=>2,    '#'=>3,    '$'=>4,    '%'=>5,    '^'=>6,    '&'=>7,    '*'=>8,    '('=>9,    ')'=>0); # ShftLkUpTabl (4NumbKeyz,shudBin k8)
 my %valz =('wich'=>0, 'mode'=>0, 'mute'=>0, 'dig1'=>1, 'alll'=>0, 'only'=>0, 'ster'=>0, 'ltrt'=>0, 'recf'=>1, 'titl'=>0, 'info'=>0, 'cnin'=>1); # pmix valz
@@ -233,7 +233,9 @@ sub LoadSetz{ my $curr; my @linz  = (); my $ctrl; my %adat; # obtain current mix
       if(/^\s*(\w+):?\s+(\d+)((,|%\s+\/)\s+(\d+))?((,|%\s+-)\s+([RP]))?/i){ $sdvz{$1} =  0; $recp{$1} = '';  $setz[0]{$1} = $setz[1]{$1} =      $2          ;
         if(defined($5)){                                                    $sdvz{$1} =  1;                                 $setz[1]{$1} =         $5       ;
           unless($valz{'ster'}){                                                                             $setz[0]{$1} = $setz[1]{$1} = int(($2+$5)/ 2.0);}}
-                                                                                            $recp{$1} = $8 if(defined($8)); } } } }
+                                                                                            $recp{$1} = $8 if(defined($8)); } } }
+  for(my $dndx=$#dopt;$dndx;$dndx--){ splice(@dopt,$dndx,1) unless(exists($omap{$dopt[$dndx]}) || exists($sdvz{$dopt[$dndx]}));}@optz=@dopt if(!$valz{'mode'});
+}
 sub SaveValz{ # save current levels to a resource file
     open(RCFL, '>',    "$ENV{'HOME'}/.${name}rc"); for(sort(keys(%{$setz[0]}))){ print RCFL "$_:$setz[0]{$_}:$setz[1]{$_}\n"; } close(RCFL); }
 sub LoadValz{ # load resource file into current levels
@@ -271,13 +273,13 @@ sub ShowInfo{ # Display an Info dialog window
   $simp->Mesg('type' => 'info',
 " $name v$mjvr.$mnvr.$ptvr - by $auth
  
-$name was inspired by aumix, mmix, && mmixer
+$name was inspired by alsamixer, aumix, mmix, && mmixer
  
- Shout out to Keith && all the LBox.Org crew.  Thanks to Beppu-san for
-being a good friend.  I hope you find $name useful.  Please don't 
+ Shout out to Keith && all the LBox.Org crew. Thanks to Beppu-san for
+being a good friend. I hope you find $name useful. Please don't
 hesitate to let me know if you app-ree-see-ate it or if you'd like
-me to add something for you.  I'd be glad to improve it given new 
-suggestions.  Please support FSF.Org && EFF.Org.  Thanks.  TTFN.
+me to add something for you. I'd be glad to improve it given new
+suggestions. Please support FSF.Org && EFF.Org. Thanks. TTFN.
  
                                                        -Pip
  

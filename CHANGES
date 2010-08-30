@@ -1,6 +1,25 @@
 CHANGES
     Revision history for Perl extension Curses::Simp:
 
+    - 1.4.A8UG1gG Mon Aug 30 16:01:42:16 2010
+        * t/00podc.t should pass now that my POD is updated to cover all
+        subs
+
+        * Brws: setup to read $ENV{'LS_COLORS'} into GLBL{OVERMAPP}
+
+        * fixed POD error that was failing on FreeBSD because items must
+        follow overs
+
+        * tested ACS_ borders working again, restored as dfalt, added new
+        ARROW bordset
+
+        * fixed Prmt handle Eterm BACKSPACE (ord(127)) like TTY (without
+        ndng Ctrl-BS)
+
+        * fixed FlagCVis (MkMethodz CRSR flag was accidentally set as CURS)
+
+        * updated license to GPLv3 and bumped minor version for the CPAN
+
     - 1.2.A7DDCh3 Tue Jul 13 13:12:43:03 2010
         * made B == Blue && K == blacK like RGB vs. CMYK
 

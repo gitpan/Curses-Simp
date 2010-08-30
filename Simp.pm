@@ -1,4 +1,4 @@
-# 2AFBQB7: Curses::Simp created by Pip@CPAN.Org to simplify Perl text-mode application development
+# 2AFBQB7: Curses::Simp by PipStuart <Pip@CPAN.Org> to simplify Perl text-mode application development;
 # Notz: Curses color names: COLOR_ BLACK,RED,GREEN,YELLOW,BLUE,MAGENTA,CYAN,WHITE
 package Curses::Simp;
 use strict;
@@ -7,10 +7,10 @@ use Carp;
 use Tie::Array;
 use Math::BaseCnv qw(:all);
 use Curses; # comment this line if you want to try 4NT rendering
-my $curs = eval("use Curses;      1") || 0;
-my $ptim = eval("use Time::PT;    1") || 0;
-my $fram = eval("use Time::Frame; 1") || 0;
-our $VERSION     = '1.2.A7DDCh3'; # major . minor . PipTimeStamp
+my $curs = eval('use Curses;      1') || 0;
+my $ptim = eval('use Time::PT;    1') || 0;
+my $fram = eval('use Time::Frame; 1') || 0;
+our $VERSION     = '1.4.A8UG1gG'; # major . minor . PipTimeStamp
 our $PTVR        = $VERSION; $PTVR =~ s/^\d+\.\d+\.//; # strip major && minor # Please see `perldoc Time::PT` for an explanation of $PTVR.
 my $dbug = 0; open(DBUG,'>','dbug') if($dbug); # flag for debug file logging
 END { CScr() if($curs); close(DBUG) if($dbug); } # Auto-execute CloseScreen() on exit
@@ -406,7 +406,7 @@ sub TIEARRAY {
     }
     unless($foun){
       for my $attr ($self->AttrNamz()){
-        if($_verbose_attrnamz{$attr} eq $keey) { # exact match
+        if($_verbose_attrnamz{$attr} eq $keey){ # exact match
           $self->{$attr} = $valu;
           $foun = 1;
         }
@@ -452,7 +452,7 @@ sub POP       { $_ =    pop(@{$_[0]->{'_text'}});             $_[0]->TestDraw();
 sub SHIFT     { $_ =  shift(@{$_[0]->{'_text'}});             $_[0]->TestDraw(); return($_); }
 sub UNSHIFT   {     unshift(@{$_[0]->{'_text'}}, $_[1]);      $_[0]->TestDraw(); }
 sub SPLICE    {
-#open(DBUG, ">dbug"); foreach(0..$#_) { print DBUG "$_ : $_[$_]\n"; } close(DBUG); $_[0]->GetK(-1);
+#open(DBUG, ">dbug"); for(0..$#_) { print DBUG "$_ : $_[$_]\n"; } close(DBUG); $_[0]->GetK(-1);
 #                $_ = splice(@{$_[0]->{'_text'}}, @_[1..$#_]); $_[0]->TestDraw(); return($_); }
   my $self = shift;
   my $offs = shift || 0;
@@ -495,7 +495,7 @@ sub MkMethdz {
         ($DISPSTAK[$self->{'_dndx'}], $DISPSTAK[$nwvl           ]);
       }
       $self->{$attr}   = $nwvl;
-      $self->{'_chgd'} = 1;
+      $self->{'_chgd'} = 1;#urs_set($self->{'_flagcvis'}) if($crsr && $self->{'_chgd'});
     }
   };
   $cmnd{'assign'} ||= $cmnd{'asin'}; # handle normal names too =)
@@ -504,24 +504,24 @@ sub MkMethdz {
     $self->{$attr}   = '';
     $self->{'_chgd'} = 1;
   };
-  $cmnd{'blank'} ||= $cmnd{'blnk'}; # handle normal names too =)
+  $cmnd{'blank'} ||= $cmnd{'blnk'};
   $cmnd{'togl'} ||= sub { # Dflt toggle command (for flags)
     my $self = shift;
     $self->{$attr}  ^= 1;
     $self->{'_chgd'} = 1;
   };
-  $cmnd{'toggle'} ||= $cmnd{'togl'}; # handle normal names too =)
-  $cmnd{'true'} ||= sub { # Dflt truth command (for flags)
+  $cmnd{'toggle'} ||= $cmnd{'togl'};
+  $cmnd{'true'} ||= sub { # Dflt truth  command (for flags)
     my $self = shift;
     $self->{$attr}   = 1;
     $self->{'_chgd'} = 1;
   };
-  $cmnd{'fals'} ||= sub { # Dflt false command (for flags)
+  $cmnd{'fals'} ||= sub { # Dflt false  command (for flags)
     my $self = shift;
     $self->{$attr}   = 0;
     $self->{'_chgd'} = 1;
   };
-  $cmnd{'false'} ||= $cmnd{'fals'}; # handle normal names too =)
+  $cmnd{'false'} ||= $cmnd{'fals'};
   $cmnd{'incr'} ||= sub { # Dflt increment command
     my $self = shift; my $amnt = shift || 1;
     if(!$dstk || $self->{'_dndx'} < $#DISPSTAK){
@@ -534,7 +534,7 @@ sub MkMethdz {
       $self->{'_chgd'} = 1;
     }
   };
-  $cmnd{'increase'} ||= $cmnd{'incr'}; # handle normal names too =)
+  $cmnd{'increase'} ||= $cmnd{'incr'};
   $cmnd{'decr'} ||= sub { # Dflt decrement command
     my $self = shift; my $amnt = shift || 1;
     if(!$dstk || $self->{'_dndx'}){
@@ -547,7 +547,7 @@ sub MkMethdz {
       $self->{'_chgd'} = 1;
     }
   };
-  $cmnd{'decrease'} ||= $cmnd{'decr'}; # handle normal names too =)
+  $cmnd{'decrease'} ||= $cmnd{'decr'};
   if($aray){ # default commands for when $self->{$attr} is an array ref
     $cmnd{'push'} ||= sub { # Dflt push
       my $self = shift;
@@ -559,21 +559,21 @@ sub MkMethdz {
       pop(@{$self->{$attr}});
       $self->{'_chgd'} = 1;
     };
-    $cmnd{'pop' } ||= $cmnd{'popp'}; # handle normal names too =)
+    $cmnd{'pop' } ||= $cmnd{'popp'};
     $cmnd{'apnd'} ||= sub { # Dflt append to last line
       my $self = shift;
       if(@{$self->{$attr}}){ $self->{$attr}->[-1] .= shift;  }
       else                 { push(@{$self->{$attr}}, shift); }
       $self->{'_chgd'} = 1;
     };
-    $cmnd{'append'} ||= $cmnd{'apnd'}; # handle normal names too =)
+    $cmnd{'append'} ||= $cmnd{'apnd'};
     $cmnd{'dupl'} ||= sub { # Dflt duplicate last line or some line #
       my $self = shift; my $lndx = shift || -1;
       if(@{$self->{$attr}}){ push(@{$self->{$attr}}, $self->{$attr}->[$lndx]); }
       else                 { push(@{$self->{$attr}},                      ''); }
       $self->{'_chgd'} = 1;
     };
-    $cmnd{'duplicate'} ||= $cmnd{'dupl'}; # handle normal names too =)
+    $cmnd{'duplicate'} ||= $cmnd{'dupl'};
     $cmnd{'size'} ||= sub { # return array size
       my $self = shift; return(scalar(@{$self->{$attr}}));
     };
@@ -684,7 +684,6 @@ sub MkMethdz {
     }
   }
 }
-
 MkMethdz( 'NAME' => 'Text', 'ARAY' => 1 );
 MkMethdz( 'NAME' => 'FClr', 'ARAY' => 1 );
 MkMethdz( 'NAME' => 'BClr', 'ARAY' => 1 );
@@ -709,7 +708,7 @@ MkMethdz( 'NAME' => 'FlagADTB' );
 MkMethdz( 'NAME' => 'FlagMaxi', 'UPDT' => 1 );
 MkMethdz( 'NAME' => 'FlagShrk', 'UPDT' => 1 );
 MkMethdz( 'NAME' => 'FlagCntr', 'UPDT' => 1 );
-MkMethdz( 'NAME' => 'FlagCVis', 'CURS' => 1 );
+MkMethdz( 'NAME' => 'FlagCVis', 'CRSR' => 1 );
 MkMethdz( 'NAME' => 'FlagScrl' );
 MkMethdz( 'NAME' => 'FlagSDLK' );
 MkMethdz( 'NAME' => 'FlagFram' );
@@ -781,20 +780,27 @@ sub OScr{ no strict 'subs'; # Open a new Curses Screen && setup all useful stuff
                   echos  _MINUTE  %_MINUTE%;  &
                   echos  _SECOND  %_SECOND%;`; while($data =~ s/(_[BCDFHKMRSY][ABEGIOW][ACDHLNUWY]?[IORSTU]?[HMNT]?[DEN]?S?)\s+([^;]*);//){ $SDAT{$1} = $2; }
       return; # raw() allows ^C,^S,^Z 2simply pass thru,unlike cbreak(),but raw requirz`reset`from the cmdline,if the app crashes; napms($ms) 2nap millisecs;
-    } initscr();noecho();nonl();raw();start_color();use_default_colors();curs_set(0); # start_color woUzDfltColrz wuz mkng trnsparntGnomTermBGsolid blacK;
-    keypad(1);meta(1);intrflush(0);notimeout(0);timeout(0);clear();move(getmaxy()-1,getmaxx()-1);refresh(); # nodelay()||timeout(-1) 4non||blocking getch()
+    } initscr();noecho();nonl();raw();start_color();$GLBL{'FLAGUDCL'} = eval('use_default_colors(); 1') || 0;
+    # start_color without use_default_colors was making transparent GnomeTerminal BackGround solid blacK; A7QAMqt: ... but since use_default_colors() above is
+    #   not defined in some SunOS/Solaris Curses libraries, I've wrapped it in an eval to hopefully pass their CPAN tests; # below: nodelay()||timeout(-1)...
+    curs_set(0);keypad(1);meta(1);intrflush(0);notimeout(0);timeout(0);clear();move(getmaxy()-1,getmaxx()-1);refresh();    # ... for non||blocking getch()
     @BORDSETS = ( # initscr initializes line-draw chars for my border hash
+      { 'ul' => ACS_ULCORNER,                  'ur' => ACS_URCORNER,
+                     'rt' => ACS_RTEE,  'lt' => ACS_LTEE,
+                     'tt' => ACS_TTEE,  'bt' => ACS_BTEE,
+                     'hl' => ACS_HLINE, 'vl' => ACS_VLINE,
+        'll' => ACS_LLCORNER,                  'lr' => ACS_LRCORNER, },
       { 'ul' => '+', 'rt' => '{', 'lt' => '}', 'ur' => '+',             #   032:20: !"#$%&'   040:28:()*+,-./   048:30:01234567   056:38:89:;<=>?
                      'tt' => '+', 'bt' => '+',                          #   064:40:@ABCDEFG   072:48:HIJKLMNO   080:50:PQRSTUVW   088:58:XYZ[\]^_
         'll' => '+', 'hl' => '-', 'vl' => '|', 'lr' => '+',          }, #   096:60:`abcdefg   104:68:hijklmno   112:70:pqrstuvw   120:78:xyz{|}~
       { 'ul' => ' ', 'rt' => ' ', 'lt' => ' ', 'ur' => ' ',             #   160:A0: ¡¢£¤¥¦§   168:A8:¨©ª«¬­®¯   176:B0:°±²³´µ¶·   184:B8:¸¹º»¼½¾¿
                      'tt' => ' ', 'bt' => ' ',                          #   192:C0:ÀÁÂÃÄÅÆÇ   200:C8:ÈÉÊËÌÍÎÏ   208:D0:ÐÑÒÓÔÕÖ×   216:D8:ØÙÚÛÜÝÞß
         'll' => ' ', 'hl' => ' ', 'vl' => ' ', 'lr' => ' ',          }, #   224:E0:àáâãäåæç   232:E8:èéêëìíîï   240:F0:ðñòóôõö÷   248:F8:øùúûüýþÿ
-      { 'ul' => ACS_ULCORNER,                  'ur' => ACS_URCORNER,
-                     'rt' => ACS_RTEE,  'lt' => ACS_LTEE,
-                     'tt' => ACS_TTEE,  'bt' => ACS_BTEE,
+      { 'ul' => ACS_PLUS,                      'ur' => ACS_PLUS,
+                     'rt' => ACS_RARROW,'lt' => ACS_LARROW,
+                     'tt' => ACS_UARROW,'bt' => ACS_DARROW,
                      'hl' => ACS_HLINE, 'vl' => ACS_VLINE,
-        'll' => ACS_LLCORNER,                  'lr' => ACS_LRCORNER, },
+        'll' => ACS_PLUS,                      'lr' => ACS_PLUS,     },
       { 'ul' => 'X', 'rt' => '[', 'lt' => ']', 'ur' => 'X',
                      'tt' => '#', 'bt' => '#',
         'll' => 'X', 'hl' => '=', 'vl' => 'I', 'lr' => 'X',          },
@@ -1112,8 +1118,8 @@ sub Draw{ # Simp object self Drawing method
   if($self->{'_btyp'}){
     $self->BordChar('ul');
     $tndx = int((($self->{'_widt'} - 2) - length($self->{'_titl'})) / 2);
-    if(length($self->{'_titl'})) {
-      for(my $i = 1; $i < $tndx; $i++){
+    if(length($self->{'_titl'})){
+      for(my $i=1;$i<$tndx;$i++){
         $self->BordChar('hl', 1);
       }
       $self->BordChar('rt', 1); $tndx++;
@@ -1286,7 +1292,7 @@ sub Draw{ # Simp object self Drawing method
   }
   if($self->{'_btyp'}){
     $self->BordChar('ll');
-    $self->BordChar('hl', 1) foreach(2..$self->{'_widt'});
+    $self->BordChar('hl', 1) for(2..$self->{'_widt'});
     $self->BordChar('lr', 1);
     if    ($self->{'_flagdrop'} && !$self->{'_flagdown'}){
       $self->{'_wind'}->move(1, ($self->{'_widt'} - 4));
@@ -1311,10 +1317,10 @@ sub Draw{ # Simp object self Drawing method
   $self->Move(); # replace cursor position && refresh the window
   return();
 }
-sub TestDraw { # Test whether an auto-Draw() should be called
+sub TestDraw{ # Test whether an auto-Draw() should be called
   $_[0]->Draw() if($_[0]->{'_text'} && @{$_[0]->{'_text'}} && $_[0]->{'_flagaudr'});
 }
-sub Wait {
+sub Wait{
   my $self = shift; my $wait = 0;
   my($keey, $valu); my $foun;
   while(@_){ # load key/vals like new()
@@ -1348,12 +1354,12 @@ sub Wait {
   }
   return(napms($wait));
 }
-sub GetK {
+sub GetK{
   my $self = shift; my $tmot = 0; my $tsdl = 0;
   my($keey, $valu); my $foun; my $char;
   while(@_){ # load key/vals like new()
     ($keey, $valu)=(shift, shift); $foun = 0;
-    if(defined($valu)) {
+    if(defined($valu)){
       for my $attr ($self->AttrNamz()){
         if     ($attr =~ /$keey/i ||
                 $_verbose_attrnamz{$attr} eq $keey){ # exact match
@@ -1492,7 +1498,8 @@ sub GetK {
         my $ordc;
         $char =~ s/^'//; $char =~ s/''(\d*)'$//; $ordc = $1;
 #print "\nchar:$char ordc:$ordc ord:" . ord($char) . "\n";
-        if   ($ordc ==  8){ $char = 'KEY_BACKSPACE'; }
+        if   ($ordc ==127 ||
+              $ordc ==  8){ $char = 'KEY_BACKSPACE'; }
         elsif($ordc ==  9){ $char = 'KEY_TAB'; }
         elsif($ordc == 32){ $char = '^s'; }
         $char = 'KEY_' . $SDLK4NTM{$char} if(defined($char) && exists($SDLK4NTM{$char}));
@@ -1508,7 +1515,7 @@ sub GetK {
   }
   return($char);
 }
-sub KMod { # accessor for the %{$self->{'_kmod'}} hash
+sub KMod{ # accessor for the %{$self->{'_kmod'}} hash
   my $self = shift; my $kmod = 'KMOD_NONE';
   my($keey, $valu); my $foun;
   while(@_){ # load key/vals like new()
@@ -1557,34 +1564,33 @@ sub GetS{ # Get a string at the cursor or pass temp y, x, and length params
     }
   }
 }
-sub Move { # update cursor position
+sub Move{ # update cursor position
   my $self = shift; my($ycrs, $xcrs)=(shift, shift); my $eflg = 0;
-  if(defined($ycrs) && defined($xcrs)){ # (-1, -1) is a special Move
-    # exception to put cursor in lower right corner of border (if BTyp)
-    $eflg = 1 if($ycrs == -1 && $xcrs == -1);
-    $ycrs = ($self->{'_hite'} - 1) if($ycrs == -1);
-    $xcrs = ($self->{'_widt'} - 1) if($xcrs == -1);
+  if(defined($ycrs) && defined($xcrs)){ # (-1, -1) is a special Move exception to put cursor in lower right corner of border (if BTyp)
+    if($ycrs == -1 && $xcrs == -1){ $eflg = 1;
+      $ycrs = ($self->{'_hite'}-1);
+      $xcrs = ($self->{'_widt'}-1);
+    }
   }else{
     $ycrs = $self->{'_ycrs'} unless(defined($ycrs));
-    $xcrs = $self->{'_xcrs'};
+    $xcrs = $self->{'_xcrs'} unless(defined($xcrs));
   }
   $ycrs = 0 if($ycrs < 0);
   $xcrs = 0 if($xcrs < 0);
   if($self->{'_btyp'}){ # trap cursor inside border
-    if    (($ycrs == $self->{'_hite'} - 1 &&
-            $xcrs == $self->{'_widt'} - 2) ||
-           ($ycrs == $self->{'_hite'} - 2 &&
-            $xcrs == $self->{'_widt'} - 1)){
-      $ycrs = ($self->{'_hite'} - 2);
-      $xcrs = ($self->{'_widt'} - 2);
-    }elsif(!$eflg){
-      $ycrs++; $xcrs++;
-      $ycrs = ($self->{'_hite'} - 2) if($ycrs > ($self->{'_hite'} - 2));
-      $xcrs = ($self->{'_widt'} - 2) if($xcrs > ($self->{'_widt'} - 2));
+    if    (($ycrs == $self->{'_hite'}-1 &&
+            $xcrs == $self->{'_widt'}-2) ||
+           ($ycrs == $self->{'_hite'}-2 &&
+            $xcrs == $self->{'_widt'}-1)){
+      $ycrs = $self->{'_hite'}-2;
+      $xcrs = $self->{'_widt'}-2;
+    }elsif(!$eflg){ $ycrs++; $xcrs++;
+      $ycrs = $self->{'_hite'}-2 if($ycrs > $self->{'_hite'}-2);
+      $xcrs = $self->{'_widt'}-2 if($xcrs > $self->{'_widt'}-2);
     }
   }else{
-    $ycrs = $self->{'_hite'} - 1 if($ycrs > ($self->{'_hite'} - 1));
-    $xcrs = $self->{'_widt'} - 1 if($xcrs > ($self->{'_widt'} - 1));
+    $ycrs   = $self->{'_hite'}-1 if($ycrs > $self->{'_hite'}-1);
+    $xcrs   = $self->{'_widt'}-1 if($xcrs > $self->{'_widt'}-1);
   }
   if($curs && $self->{'_valudol8'}){
     $self->{'_wind'}->refresh();
@@ -1592,19 +1598,17 @@ sub Move { # update cursor position
     print($self->{'_valudol8'});
     printf("\e[%d;%dH", $self->{'_ycrs'} + 1, $self->{'_xcrs'});
   }
-  if($ycrs != $self->{'_ycrs'} || $xcrs != $self->{'_xcrs'}){
-    if($curs){
-      $self->{'_wind'}->move($ycrs, $xcrs);
-      $self->{'_wind'}->getyx($self->{'_ycrs'}, $self->{'_xcrs'});
-    }else{
-      system("screen $ycrs $xcrs");
-    }
-    if($self->{'_btyp'}){ $self->{'_ycrs'}--; $self->{'_xcrs'}--; }
+  if($curs){
+    $self->{'_wind'}->move($ycrs, $xcrs);
+    $self->{'_wind'}->getyx($self->{'_ycrs'}, $self->{'_xcrs'});
+  }else{
+    system("screen $ycrs $xcrs");
   }
+  if($self->{'_btyp'}){ $self->{'_ycrs'}--; $self->{'_xcrs'}--; }
   $self->{'_wind'}->refresh() if($curs);
   return($self->{'_ycrs'}, $self->{'_xcrs'});
 }
-sub Rsiz { # update window dimensions (Resize)
+sub Rsiz{ # update window dimensions (Resize)
   my $self = shift; my $hite = shift; my $widt = shift; my $eflg = 0;
   my ($ymax, $xmax);
   if(defined($hite) && defined($widt)){
@@ -1641,7 +1645,7 @@ sub Rsiz { # update window dimensions (Resize)
   $self->Move(-1, -1) if($eflg);
   return($self->{'_hite'}, $self->{'_widt'});
 }
-sub Updt { # update a Simp object's dimensions (resize && mvwin)
+sub Updt{ # update a Simp object's dimensions (resize && mvwin)
   my $self = shift; my $noch = 0; # No Changes flag
   my($keey, $valu); my $foun;
   while(@_){ # load key/vals like new()
@@ -1749,7 +1753,7 @@ sub Updt { # update a Simp object's dimensions (resize && mvwin)
 # Mesg() is a special Curses::Simp object constructor which creates a
 #   completely temporary Message window.
 # If params are supplied, they must be hash key => value pairs.
-sub Mesg {
+sub Mesg{
   my $main = shift; my($keey, $valu); my $char = -1;
   my $self = bless({}, ref($main));
   for my $attr ($self->AttrNamz()){
@@ -1957,7 +1961,7 @@ sub Mesg {
 # Prmt() is a special Curses::Simp object constructor which creates a
 #   completely temporary Prompt window.
 # If params are supplied, they must be hash key => value pairs.
-sub Prmt {
+sub Prmt{
   my $main = shift; my($keey, $valu); my $char; my $tchr; my $data;
   my $self = bless({}, ref($main));   my $twid; my $indx;
   for my $attr ($self->AttrNamz()){
@@ -2079,7 +2083,7 @@ sub Prmt {
 #   typed objects like CheckBoxes or DropDownMenus.
 # Maybe later, it will change the border type / color of normal
 #   Simp object windows as they gain focus.
-sub Focu {
+sub Focu{
   my $self = shift; return() unless(exists($self->{'_type'}));
   my $updt = shift || 0; my $char = -1; my $tchr;
   unless($updt) {
@@ -2093,7 +2097,7 @@ sub Focu {
       }
     } elsif($self->{'_type'} =~ /^(prmt|drop)$/) { # big Prmt (drop)? focus
       my $cmov; my $done = 0;                      #   input handler
-      $self->CVis(1);
+      $self->FlagCVis(1);
       while(!$done) {
         $char = $self->GetK(-1);
         $tchr =  $char;
@@ -2114,19 +2118,19 @@ sub Focu {
           }
           $self->{'_echg'} = 1;
           $done = 1;
-        } elsif($tchr eq 'TAB') {
+        }elsif($tchr eq 'TAB'){
           $tchr = '  ';
         }
         $tchr = uc($tchr) if($self->{'_kmod'}->{'KMOD_SHIFT'});
-        if($self->{'_flagdrop'} && $self->{'_flagdown'}) { # DropIsDown
-          if($char ne 'SDLK_TAB') {
+        if($self->{'_flagdrop'} && $self->{'_flagdown'}){ # DropIsDown
+          if($char ne 'SDLK_TAB'){
             if     ($tchr =~ /^(RETURN|ESCAPE|SPACE|TILDE|BACKQUOTE)$/) {
               $self->{'_flagdown'} = 0; # Close Drop down
               $self->{'_dtxt'} = $self->{'_text'}->[$self->{'_lndx'}];
               $self->{'_data'} = $self->{'_dtxt'};
               unshift(@{$self->{'_text'}}, $self->{'_data'});
               $self->{'_hite'} = 3;
-              if($self->{'_flagclru'}) {
+              if($self->{'_flagclru'}){
                 $self->{'_fclr'}->[$self->{'_lndx'}] = $self->{'_dtfc'};
                 $self->{'_bclr'}->[$self->{'_lndx'}] = $self->{'_dtbc'};
                 $self->{'_fclr'}->[0]                = $self->{'_hifc'};
@@ -2134,12 +2138,12 @@ sub Focu {
               }
               $char = -1 if($tchr eq 'RETURN');
               $self->{'_echg'} = 1 if($self->{'_elmo'} eq 'brws');
-            } elsif($tchr =~ /^(UP|LEFT|k)$/) {
+            }elsif($tchr =~ /^(UP|LEFT|k)$/){
               if($self->{'_lndx'}) {
                 $self->{'_lndx'}--;
                 $self->{'_dtxt'} = $self->{'_text'}->[$self->{'_lndx'}    ];
                 $self->{'_data'} = $self->{'_dtxt'};
-                if($self->{'_flagclru'}) {
+                if($self->{'_flagclru'}){
                   $self->{'_fclr'}->[$self->{'_lndx'} + 1] = $self->{'_dtfc'};
                   $self->{'_bclr'}->[$self->{'_lndx'} + 1] = $self->{'_dtbc'};
                   $self->{'_fclr'}->[$self->{'_lndx'}    ] = $self->{'_hifc'};
@@ -2148,12 +2152,12 @@ sub Focu {
                 $self->{'_curs'} = length($self->{'_data'});
                 $self->{'_echg'} = 1 if($self->{'_elmo'} eq 'brws');
               }
-            } elsif($tchr =~ /^(DOWN|RIGHT|j)$/) {
-              if($self->{'_lndx'} < (@{$self->{'_text'}} - 1)) {
+            }elsif($tchr =~ /^(DOWN|RIGHT|j)$/){
+              if($self->{'_lndx'} < (@{$self->{'_text'}} - 1)){
                 $self->{'_lndx'}++;
                 $self->{'_dtxt'} = $self->{'_text'}->[$self->{'_lndx'}    ];
                 $self->{'_data'} = $self->{'_dtxt'};
-                if($self->{'_flagclru'}) {
+                if($self->{'_flagclru'}){
                   $self->{'_fclr'}->[$self->{'_lndx'} - 1] = $self->{'_dtfc'};
                   $self->{'_bclr'}->[$self->{'_lndx'} - 1] = $self->{'_dtbc'};
                   $self->{'_fclr'}->[$self->{'_lndx'}    ] = $self->{'_hifc'};
@@ -2167,109 +2171,109 @@ sub Focu {
             $self->{'_ycrs'} = $self->{'_lndx'};
             $self->Draw();
           }
-        } elsif(  $char ne 'SDLK_RETURN' && (!$self->{'_flagdrop'}       ||
-                                            ( $self->{'_elmo'} eq 'brws' &&
-                  $char ne 'SDLK_TAB'    &&   $self->{'_flagdrop'}       &&
-                 ($char !~ /^SDLK_[bcfhu]$/ || !$self->{'_kmod'}->{'KMOD_CTRL'})))) {
+        }elsif(  $char ne 'SDLK_RETURN' && (!$self->{'_flagdrop'}       ||
+                                           ( $self->{'_elmo'} eq 'brws' &&
+                 $char ne 'SDLK_TAB'    &&   $self->{'_flagdrop'}       &&
+                ($char !~ /^SDLK_[bcfhu]$/ || !$self->{'_kmod'}->{'KMOD_CTRL'})))){
           $cmov = 0; # mostly regular Prmt stuff
           if     (  $self->{'_flagdrop'} && ($tchr =~ /^(TILDE|BACKQUOTE)$/ ||
                   ( $tchr eq 'SPACE' && (!$self->{'_flagclru'} ||
                    ($self->{'_fclr'}->[0] eq $self->{'_hifc'} &&
-                    $self->{'_bclr'}->[0] eq $self->{'_hibc'}))))) {
+                    $self->{'_bclr'}->[0] eq $self->{'_hibc'}))))){
             $self->{'_flagdown'} = 1; # drop Down
             shift(@{$self->{'_text'}});
             $self->{'_hite'} = @{$self->{'_text'}} + 2;
             $self->{'_dtxt'} = $self->{'_text'}->[$self->{'_lndx'}];
             $self->{'_data'} = $self->{'_dtxt'};
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[0] = $self->{'_dtfc'};
               $self->{'_bclr'}->[0] = $self->{'_dtbc'};
             }
             $self->{'_curs'} = length($self->{'_data'});
             $self->{'_sscr'} = 0;
-          } elsif($tchr eq 'UP'  ) {
+          }elsif($tchr eq 'UP'  ){
             if($self->{'_flagdrop'} && !$self->{'_flagdown'}) {
               if($self->{'_lndx'}) {
                 $self->{'_lndx'}--;
                 $self->{'_dtxt'} = $self->{'_text'}->[$self->{'_lndx'} + 1];
                 $self->{'_data'} = $self->{'_dtxt'};
                 $self->{'_text'}->[0] = $self->{'_data'};
-                if($self->{'_flagclru'}) {
+                if($self->{'_flagclru'}){
                   $self->{'_fclr'}->[0] = $self->{'_hifc'};
                   $self->{'_bclr'}->[0] = $self->{'_hibc'};
                 }
                 $self->{'_curs'} = length($self->{'_data'});
                 $self->{'_echg'} = 1 if($self->{'_elmo'} eq 'brws');
               }
-            } elsif($self->{'_flagedit'} && $self->{'_curs'}) { # uppercase
+            }elsif($self->{'_flagedit'} && $self->{'_curs'}){ # uppercase
               my $temp = substr($self->{'_data'}, $self->{'_curs'}, 1);
                          substr($self->{'_data'}, $self->{'_curs'}, 1, uc($temp));
             }
-          } elsif($tchr eq 'DOWN') {
-            if($self->{'_flagdrop'} && !$self->{'_flagdown'}) {
-              if($self->{'_lndx'} < (@{$self->{'_text'}} - 2)) {
+          }elsif($tchr eq 'DOWN'){
+            if($self->{'_flagdrop'} && !$self->{'_flagdown'}){
+              if($self->{'_lndx'} < (@{$self->{'_text'}} - 2)){
                 $self->{'_lndx'}++;
                 $self->{'_dtxt'} = $self->{'_text'}->[$self->{'_lndx'} + 1];
                 $self->{'_data'} = $self->{'_dtxt'};
                 $self->{'_text'}->[0] = $self->{'_data'};
-                if($self->{'_flagclru'}) {
+                if($self->{'_flagclru'}){
                   $self->{'_fclr'}->[0] = $self->{'_hifc'};
                   $self->{'_bclr'}->[0] = $self->{'_hibc'};
                 }
                 $self->{'_curs'} = length($self->{'_data'});
                 $self->{'_echg'} = 1 if($self->{'_elmo'} eq 'brws');
               }
-            } elsif($self->{'_flagedit'} && $self->{'_curs'}) { # lowercase
+            }elsif($self->{'_flagedit'} && $self->{'_curs'}){ # lowercase
               my $temp = substr($self->{'_data'}, $self->{'_curs'}, 1);
                          substr($self->{'_data'}, $self->{'_curs'}, 1, lc($temp));
             }
-          } elsif($self->{'_flagedit'}) {
-            if     ($tchr eq 'LEFT' ) { # move cursor left
+          }elsif($self->{'_flagedit'}){
+            if    ($tchr eq 'LEFT' ) { # move cursor left
               if($self->{'_curs'}) {
                 $self->{'_curs'}--;
                 $self->{'_sscr'}-- if($self->{'_sscr'});
               }
               $cmov = 1;
-            } elsif($tchr eq 'RIGHT') { # move cursor right
-              if($self->{'_curs'} < length($self->{'_data'})) {
+            }elsif($tchr eq 'RIGHT'){ # move cursor right
+              if($self->{'_curs'} < length($self->{'_data'})){
                 $self->{'_curs'}++;
               }
               $cmov = 1;
-            } elsif($tchr eq 'HOME' ) { # move cursor to beginning
+            }elsif($tchr eq 'HOME' ){ # move cursor to beginning
               $self->{'_curs'} = 0;
               $self->{'_sscr'} = 0 if($self->{'_sscr'});
               $cmov = 1;
-            } elsif($tchr eq 'END'  ) { # move cursor to end
+            }elsif($tchr eq 'END'  ){ # move cursor to end
               $self->{'_curs'} = length($self->{'_data'});
-              if(length($self->{'_data'}) < $self->{'_widt'} - 2) {
+              if(length($self->{'_data'}) < $self->{'_widt'} - 2){
                 $self->{'_sscr'} = (length($self->{'_data'}) - $self->{'_widt'} - 2);
               }
               $cmov = 1;
-            } elsif($tchr eq 'INSERT') {
+            }elsif($tchr eq 'INSERT'){
               $self->FlagInsr('togl');
-              if($self->FlagInsr) { $self->{'_titl'} =~ s/\[O\]$//; }
-              else                { $self->{'_titl'} .= '[O]';
-                unless($self->Widt() > length($self->Titl()) + 4) {
+              if($self->FlagInsr){ $self->{'_titl'} =~ s/\[O\]$//; }
+              else               { $self->{'_titl'} .= '[O]';
+                unless($self->Widt() > length($self->Titl()) + 4){
                   $self->Widt(length($self->Titl()) + 4);
                   $self->Draw(); # was $main
                 }
               }
-            } elsif($tchr eq 'BACKSPACE') {
-              if($self->{'_curs'}) {
+            }elsif($tchr eq 'BACKSPACE' || ord($tchr) == 127){
+              if($self->{'_curs'}){
                 substr($self->{'_data'}, --$self->{'_curs'}, 1, '');
                 $self->{'_sscr'}-- if($self->{'_sscr'});
               }
-            } elsif($tchr eq 'DELETE') {
+            }elsif($tchr eq 'DELETE'){
               if($self->{'_curs'} < length($self->{'_data'})) {
                 substr($self->{'_data'},   $self->{'_curs'}, 1, '');
                 $self->{'_sscr'}-- if($self->{'_sscr'});
               }
-            } elsif($tchr eq 'ESCAPE') {
-              if($self->{'_flagescx'}) {
+            }elsif($tchr eq 'ESCAPE'){
+              if($self->{'_flagescx'}){
                 $self->{'_data'} = '';
                 $self->{'_curs'} = 0;
-              } else {
-                if($self->{'_flagclru'}) {
+              }else{
+                if($self->{'_flagclru'}){
                   $self->{'_fclr'}->[0] = $self->{'_hifc'};
                   $self->{'_bclr'}->[0] = $self->{'_hibc'};
                 }
@@ -2277,22 +2281,22 @@ sub Focu {
                 $self->{'_curs'} = length($self->{'_data'});
                 $self->{'_sscr'} = 0;
               }
-            } else {
-              foreach(keys(%SDLKCHRM)) {
+            }else{
+              for(keys(%SDLKCHRM)){
                 $tchr = $_ if($tchr eq $SDLKCHRM{$_});
               }
-              if($tchr ne 'F1') {
+              if($tchr ne 'F1'){
                 if($self->{'_flagclru'} &&
                    $self->{'_fclr'}->[0] eq $self->{'_hifc'} &&
-                   $self->{'_bclr'}->[0] eq $self->{'_hibc'}) {
+                   $self->{'_bclr'}->[0] eq $self->{'_hibc'}){
                   $self->{'_data'} = $tchr;
                   $self->{'_curs'} = length($self->{'_data'});
-                } else {
-                  if     ($self->{'_curs'} == length($self->{'_data'})) {
+                }else{
+                  if    ($self->{'_curs'} == length($self->{'_data'})){
                     $self->{'_data'} .= $tchr;
-                  } elsif($self->FlagInsr()) {
+                  }elsif($self->FlagInsr()){
                     substr($self->{'_data'}, $self->{'_curs'},            0,$tchr);
-                  } else {
+                  }else{
                     substr($self->{'_data'}, $self->{'_curs'},length($tchr),$tchr);
                   }
                   $self->{'_curs'} += length($tchr);
@@ -2300,29 +2304,29 @@ sub Focu {
               }
             }
             while((($self->{'_curs'} - $self->{'_sscr'}) >= ($self->{'_widt'} - 2)) ||
-                  (($self->{'_curs'} - $self->{'_sscr'}) >= ($self->{'_widt'} - 5) && $self->{'_flagdrop'} && !$self->{'_flagdown'})) {
+                  (($self->{'_curs'} - $self->{'_sscr'}) >= ($self->{'_widt'} - 5) && $self->{'_flagdrop'} && !$self->{'_flagdown'})){
               $self->{'_sscr'}++;
             }
             if( $self->{'_flagclru'} &&
                 $self->{'_fclr'}->[0] eq $self->{'_hifc'} &&
                 $self->{'_bclr'}->[0] eq $self->{'_hibc'} &&
-               ($self->{'_data'}      ne $self->{'_dtxt'} || $cmov)) {
+               ($self->{'_data'}      ne $self->{'_dtxt'} || $cmov)){
               $self->{'_fclr'}->[0] = $self->{'_dtfc'};
               $self->{'_bclr'}->[0] = $self->{'_dtbc'};
             }
-          } else { # test !editable keys to jump in drop etc.
+          }else{ # test !editable keys to jump in drop etc.
           }
-          if($self->{'_flagdrop'} && $self->{'_flagdown'}) {
+          if($self->{'_flagdrop'} && $self->{'_flagdown'}){
             $self->{'_xcrs'} = $self->{'_curs'};
             $self->{'_ycrs'} = $self->{'_lndx'};
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[$self->{'_lndx'}] = $self->{'_hifc'};
               $self->{'_bclr'}->[$self->{'_lndx'}] = $self->{'_hibc'};
             }
-          } else {
+          }else{
             $self->{'_xcrs'} = ($self->{'_curs'} - $self->{'_sscr'});
             $self->{'_text'}->[0] = $self->{'_data'};
-            if($self->{'_sscr'}) {
+            if($self->{'_sscr'}){
               substr($self->{'_text'}->[0], 0, $self->{'_sscr'} + 3, '...');
             }
           }
@@ -2331,12 +2335,12 @@ sub Focu {
       }
     }
   }
-  if($updt) {
-    if     ($self->{'_type'} eq 'ckbx') {
+  if($updt){
+    if     ($self->{'_type'} eq 'ckbx'){
       if($self->{'_stat'}) {
         substr($self->{'_text'}->[0], 0, length($self->{'_ofbx'}), '');
         $self->{'_text'}->[0] =~ s/^/$self->{'_onbx'}/;
-      } else {
+      }else{
         substr($self->{'_text'}->[0], 0, length($self->{'_onbx'}), '');
         $self->{'_text'}->[0] =~ s/^/$self->{'_ofbx'}/;
       }
@@ -2345,44 +2349,43 @@ sub Focu {
   }
   return($char);
 }
-
-sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
+sub BildBlox{ # a sub used by CPik to construct color blocks in @text,@[fb]clr
   my $self = shift;
   @{$self->{'_text'}} = ( );
   if($self->{'_flagclru'}) {
     @{$self->{'_fclr'}} = ( );
     @{$self->{'_bclr'}} = ( );
   }
-  if     ($self->{'_styl'} eq 'barz') {
-    if($self->{'_flagbakg'}) {
+  if    ($self->{'_styl'} eq 'barz'){
+    if($self->{'_flagbakg'}){
       for(my $cndx = 0; $cndx < @telc; $cndx++) {
         push(@{$self->{'_text'}},  ' ' . hex($cndx) . ' ' .
                $telc[$cndx] . ' ' . $self->{'_bchr'} x 63);
-        if($self->{'_flagclru'}) {
-          if($cndx == $self->{'_hndx'}) {
+        if($self->{'_flagclru'}){
+          if($cndx == $self->{'_hndx'}){
             push(@{$self->{'_fclr'}}, 'kKkk' . ' ' .  $telc[$cndx] x 63);
             push(@{$self->{'_bclr'}}, 'wwww' . ' ' .  $telc[$cndx] x 63);
-          } else {
+          }else{
             push(@{$self->{'_fclr'}}, 'kk'   . ' ' .  $telc[$cndx] x 63);
             push(@{$self->{'_bclr'}}, 'wW'   . ' ' .  $telc[$cndx] x 63);
           }
         }
       }
     }
-    if($self->{'_flagforg'}) {
+    if($self->{'_flagforg'}){
       for(my $cndx = 0; $cndx < @telc; $cndx++) {
-        if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C') {
+        if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C'){
           push(@{$self->{'_text'}},  ' ' . '!' . ' ' .
                  uc($telc[$cndx]) .  ' ' . $self->{'_bchr'} x 63);
-        } else {
+        }else{
           push(@{$self->{'_text'}},  ' ' . hex($cndx+@telc) . ' ' .
                  uc($telc[$cndx]) .  ' ' . $self->{'_bchr'} x 63);
         }
-        if($self->{'_flagclru'}) {
-          if($cndx == ($self->{'_hndx'} - 8)) {
+        if($self->{'_flagclru'}){
+          if($cndx == ($self->{'_hndx'} - 8)){
             push(@{$self->{'_fclr'}}, 'kKkk' . ' ' .  uc($telc[$cndx]) x 63);
             push(@{$self->{'_bclr'}}, 'wwww' . ' ' .  uc($telc[$cndx]) x 63);
-          } else {
+          }else{
             push(@{$self->{'_fclr'}}, 'kk'   . ' ' .  uc($telc[$cndx]) x 63);
             push(@{$self->{'_bclr'}}, 'wW'   . ' ' .  uc($telc[$cndx]) x 63);
           }
@@ -2390,29 +2393,29 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
       }
     }
     $self->Move($self->{'_hndx'}, 0);
-  } elsif($self->{'_styl'} eq 'blox') {
-    if($self->{'_flagbakg'}) {
+  }elsif($self->{'_styl'} eq 'blox'){
+    if($self->{'_flagbakg'}){
       for(my $rowe = 0; $rowe < 7; $rowe++) {
         push(@{$self->{'_text'}}, '  ');
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           push(@{$self->{'_fclr'}}, '  ');
           push(@{$self->{'_bclr'}}, '  ');
         }
-        for(my $cndx = 0; $cndx < @telc; $cndx++) {
-          if     ($rowe < 5) {
+        for(my $cndx=0;$cndx<@telc;$cndx++){
+          if     ($rowe < 5){
             $self->{'_text'}->[-1] .= $self->{'_bchr'} x 8;
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[-1] .= $telc[$cndx]     x 8;
               $self->{'_bclr'}->[-1] .= 'b'              x 8;
             }
-          } elsif($rowe < 6) {
+          }elsif($rowe < 6){
             $self->{'_text'}->[-1] .= '  ' . hex($cndx) .
                                       '  ' . $telc[$cndx] . '  ';
-            if($self->{'_flagclru'}) {
-              if($cndx == $self->{'_hndx'}) {
+            if($self->{'_flagclru'}){
+              if($cndx == $self->{'_hndx'}){
                 $self->{'_fclr'}->[-1] .= 'kkKkkkkk';
                 $self->{'_bclr'}->[-1] .= 'wwwwwwww';
-              } else {
+              }else{
                 $self->{'_fclr'}->[-1] .= ' w  ';
                 $self->{'_bclr'}->[-1] .= '  W ';
               }
@@ -2420,39 +2423,39 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
           }
         }
         $self->{'_text'}->[-1] .= ' ';
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           $self->{'_fclr'}->[-1] .= ' ';
           $self->{'_bclr'}->[-1] .= ' ';
         }
       }
     }
-    if($self->{'_flagforg'}) {
-      for(my $rowe = 0; $rowe < 7; $rowe++) {
+    if($self->{'_flagforg'}){
+      for(my $rowe = 0; $rowe < 7; $rowe++){
         push(@{$self->{'_text'}}, '  ');
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           push(@{$self->{'_fclr'}}, '  ');
           push(@{$self->{'_bclr'}}, '  ');
         }
-        for(my $cndx = 0; $cndx < @telc; $cndx++) {
-          if     ($rowe < 5) {
+        for(my $cndx=0;$cndx<@telc;$cndx++){
+          if     ($rowe < 5){
             $self->{'_text'}->[-1] .= $self->{'_bchr'} x 8;
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[-1] .= uc($telc[$cndx]) x 8;
               $self->{'_bclr'}->[-1] .= 'k'              x 8;
             }
-          } elsif($rowe < 6) {
-            if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C') {
+          }elsif($rowe < 6){
+            if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C'){
               $self->{'_text'}->[-1] .= '  ' . '!' .
                                         '  ' . uc($telc[$cndx]) . '  ';
-            } else {
+            }else{
               $self->{'_text'}->[-1] .= '  ' . hex($cndx+@telc) .
                                         '  ' . uc($telc[$cndx]) . '  ';
             }
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               if($cndx == ($self->{'_hndx'} - 8)) {
                 $self->{'_fclr'}->[-1] .= 'bbBbbbbb';
                 $self->{'_bclr'}->[-1] .= 'wwwwwwww';
-              } else {
+              }else{
                 $self->{'_fclr'}->[-1] .= ' w  ';
                 $self->{'_bclr'}->[-1] .= '  W ';
               }
@@ -2460,40 +2463,40 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
           }
         }
         $self->{'_text'}->[-1] .= ' ';
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           $self->{'_fclr'}->[-1] .= ' ';
           $self->{'_bclr'}->[-1] .= ' ';
         }
       }
     }
-    if($self->{'_hndx'} < 8) {
+    if($self->{'_hndx'} < 8){
       $self->Move( 5, (( $self->{'_hndx'}      * 8) + 2));
-    } else {
+    }else{
       $self->Move(12, ((($self->{'_hndx'} - 8) * 8) + 2));
     }
-  } elsif($self->{'_styl'} eq 'squr') {
-    if($self->{'_flagbakg'}) {
-      for(my $rowe = 0; $rowe < 5; $rowe++) {
+  }elsif($self->{'_styl'} eq 'squr'){
+    if($self->{'_flagbakg'}){
+      for(my $rowe=0;$rowe<5;$rowe++){
         push(@{$self->{'_text'}}, '  ');
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           push(@{$self->{'_fclr'}}, '  ');
           push(@{$self->{'_bclr'}}, '  ');
         }
-        for(my $cndx = 0; $cndx < int(@telc / 2); $cndx++) {
-          if     ($rowe < 3) {
+        for(my $cndx=0;$cndx<int(@telc/2);$cndx++){
+          if    ($rowe < 3){
             $self->{'_text'}->[-1] .= $self->{'_bchr'} x 16;
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[-1] .= $telc[$cndx]     x 16;
               $self->{'_bclr'}->[-1] .= 'k'              x 16;
             }
-          } elsif($rowe < 4) {
+          }elsif($rowe < 4){
             $self->{'_text'}->[-1] .= '     ' . hex($cndx) .
                                       '    '  . $telc[$cndx] . '     ';
-            if($self->{'_flagclru'}) {
-              if($cndx == $self->{'_hndx'}) {
+            if($self->{'_flagclru'}){
+              if($cndx == $self->{'_hndx'}){
                 $self->{'_fclr'}->[-1] .= 'kkkkkKkkkkkkkkkk';
                 $self->{'_bclr'}->[-1] .= 'wwwwwwwwwwwwwwww';
-              } else {
+              }else{
                 $self->{'_fclr'}->[-1] .= '     W  ';
                 $self->{'_bclr'}->[-1] .= '  w     ';
               }
@@ -2501,32 +2504,32 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
           }
         }
         $self->{'_text'}->[-1] .= ' ';
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           $self->{'_fclr'}->[-1] .= ' ';
           $self->{'_bclr'}->[-1] .= ' ';
         }
       }
-      for(my $rowe = 0; $rowe < 5; $rowe++) {
+      for(my $rowe=0;$rowe<5;$rowe++){
         push(@{$self->{'_text'}}, '  ');
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           push(@{$self->{'_fclr'}}, '  ');
           push(@{$self->{'_bclr'}}, '  ');
         }
-        for(my $cndx = int(@telc / 2); $cndx < @telc; $cndx++) {
-          if     ($rowe < 3) {
+        for(my $cndx=int(@telc/2);$cndx<@telc;$cndx++){
+          if    ($rowe < 3){
             $self->{'_text'}->[-1] .= $self->{'_bchr'} x 16;
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[-1] .= $telc[$cndx]     x 16;
               $self->{'_bclr'}->[-1] .= 'k'              x 16;
             }
-          } elsif($rowe < 4) {
+          }elsif($rowe < 4){
             $self->{'_text'}->[-1] .= '     ' . hex($cndx) .
                                       '    '  . $telc[$cndx] . '     ';
-            if($self->{'_flagclru'}) {
-              if($cndx == $self->{'_hndx'}) {
+            if($self->{'_flagclru'}){
+              if($cndx == $self->{'_hndx'}){
                 $self->{'_fclr'}->[-1] .= 'kkkkkKkkkkkkkkkk';
                 $self->{'_bclr'}->[-1] .= 'wwwwwwwwwwwwwwww';
-              } else {
+              }else{
                 $self->{'_fclr'}->[-1] .= '     W  ';
                 $self->{'_bclr'}->[-1] .= '  w     ';
               }
@@ -2534,39 +2537,39 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
           }
         }
         $self->{'_text'}->[-1] .= ' ';
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           $self->{'_fclr'}->[-1] .= ' ';
           $self->{'_bclr'}->[-1] .= ' ';
         }
       }
     }
-    if($self->{'_flagforg'}) {
-      for(my $rowe = 0; $rowe < 5; $rowe++) {
+    if($self->{'_flagforg'}){
+      for(my $rowe=0;$rowe<5;$rowe++){
         push(@{$self->{'_text'}}, '  ');
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           push(@{$self->{'_fclr'}}, '  ');
           push(@{$self->{'_bclr'}}, '  ');
         }
-        for(my $cndx = 0; $cndx < int(@telc / 2); $cndx++) {
-          if     ($rowe < 3) {
+        for(my $cndx=0;$cndx<int(@telc/2);$cndx++){
+          if    ($rowe < 3){
             $self->{'_text'}->[-1] .= $self->{'_bchr'} x 16;
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[-1] .= uc($telc[$cndx]) x 16;
               $self->{'_bclr'}->[-1] .= 'k'              x 16;
             }
-          } elsif($rowe < 4) {
-            if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C') {
+          }elsif($rowe < 4){
+            if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C'){
               $self->{'_text'}->[-1] .= '     ' . '!' .
                                         '    '  . uc($telc[$cndx]) . '     ';
-            } else {
+            }else{
               $self->{'_text'}->[-1] .= '     ' . hex($cndx+@telc) .
                                         '    '  . uc($telc[$cndx]) . '     ';
             }
-            if($self->{'_flagclru'}) {
-              if($cndx == ($self->{'_hndx'} - 8)) {
+            if($self->{'_flagclru'}){
+              if($cndx == ($self->{'_hndx'} - 8)){
                 $self->{'_fclr'}->[-1] .= 'kkkkkKkkkkkkkkkk';
                 $self->{'_bclr'}->[-1] .= 'wwwwwwwwwwwwwwww';
-              } else {
+              }else{
                 $self->{'_fclr'}->[-1] .= '     W  ';
                 $self->{'_bclr'}->[-1] .= '  w     ';
               }
@@ -2574,37 +2577,37 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
           }
         }
         $self->{'_text'}->[-1] .= ' ';
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           $self->{'_fclr'}->[-1] .= ' ';
           $self->{'_bclr'}->[-1] .= ' ';
         }
       }
-      for(my $rowe = 0; $rowe < 5; $rowe++) {
+      for(my $rowe=0;$rowe<5;$rowe++){
         push(@{$self->{'_text'}}, '  ');
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           push(@{$self->{'_fclr'}}, '  ');
           push(@{$self->{'_bclr'}}, '  ');
         }
-        for(my $cndx = int(@telc / 2); $cndx < @telc; $cndx++) {
-          if     ($rowe < 3) {
+        for(my $cndx=int(@telc/2);$cndx<@telc;$cndx++){
+          if    ($rowe < 3){
             $self->{'_text'}->[-1] .= $self->{'_bchr'} x 16;
-            if($self->{'_flagclru'}) {
+            if($self->{'_flagclru'}){
               $self->{'_fclr'}->[-1] .= uc($telc[$cndx]) x 16;
               $self->{'_bclr'}->[-1] .= 'k'              x 16;
             }
-          } elsif($rowe < 4) {
-            if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C') {
+          }elsif($rowe < 4){
+            if(hex($cndx+@telc) eq 'B' || hex($cndx+@telc) eq 'C'){
               $self->{'_text'}->[-1] .= '     ' . '!' .
                                         '    '  . uc($telc[$cndx]) . '     ';
-            } else {
+            }else{
               $self->{'_text'}->[-1] .= '     ' . hex($cndx+@telc) .
                                         '    '  . uc($telc[$cndx]) . '     ';
             }
-            if($self->{'_flagclru'}) {
-              if($cndx == ($self->{'_hndx'} - 8)) {
+            if($self->{'_flagclru'}){
+              if($cndx == ($self->{'_hndx'} - 8)){
                 $self->{'_fclr'}->[-1] .= 'kkkkkKkkkkkkkkkk';
                 $self->{'_bclr'}->[-1] .= 'wwwwwwwwwwwwwwww';
-              } else {
+              }else{
                 $self->{'_fclr'}->[-1] .= '     W  ';
                 $self->{'_bclr'}->[-1] .= '  w     ';
               }
@@ -2612,36 +2615,36 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
           }
         }
         $self->{'_text'}->[-1] .= ' ';
-        if($self->{'_flagclru'}) {
+        if($self->{'_flagclru'}){
           $self->{'_fclr'}->[-1] .= ' ';
           $self->{'_bclr'}->[-1] .= ' ';
         }
       }
     }
-    if     ($self->{'_hndx'} <  4) {
+    if    ($self->{'_hndx'} <  4){
       $self->Move( 3, (( $self->{'_hndx'}       * 16) + 2));
-    } elsif($self->{'_hndx'} <  8) {
+    }elsif($self->{'_hndx'} <  8){
       $self->Move( 8, ((($self->{'_hndx'} -  4) * 16) + 2));
-    } elsif($self->{'_hndx'} < 12) {
+    }elsif($self->{'_hndx'} < 12){
       $self->Move(13, ((($self->{'_hndx'} -  8) * 16) + 2));
-    } else {
+    }else{
       $self->Move(18, ((($self->{'_hndx'} - 12) * 16) + 2));
     }
   }
-  if($self->{'_flagprsk'}) {
-    if(length($self->{'_pres'})) {
-      if($self->{'_flagclru'}) {
+  if($self->{'_flagprsk'}){
+    if(length($self->{'_pres'})){
+      if($self->{'_flagclru'}){
         $self->{'_fclr'}->[@{$self->{'_text'}}] = $self->{'_prfc'};
         $self->{'_bclr'}->[@{$self->{'_text'}}] = $self->{'_prbc'};
       }
       my $wdst = 0;
       $wdst = length($self->{'_titl'}) + 4;
-      if(@{$self->{'_text'}}) { # center press string
-        foreach(@{$self->{'_text'}}) {
+      if(@{$self->{'_text'}}){ # center press string
+        for(@{$self->{'_text'}}){
           $wdst = length($_) if($wdst < length($_));
         }
       }
-      if($wdst > length($self->{'_pres'})) {
+      if($wdst > length($self->{'_pres'})){
         $self->{'_pres'} = ' ' x int(($wdst - length($self->{'_pres'}) + 1) / 2) . $self->{'_pres'} . ' ' x int(($wdst - length($self->{'_pres'}) + 1) / 2);
       }
       push(@{$self->{'_text'}}, $self->{'_pres'});
@@ -2650,18 +2653,17 @@ sub BildBlox { # a sub used by CPik to construct color blocks in @text,@[fb]clr
   $self->Draw();
   return();
 }
-
 # CPik() is a special Curses::Simp object constructor which creates a
 #   Color Pick window.
 # If params are supplied, they must be hash key => value pairs.
-sub CPik {
-  my $main = shift; my($keey, $valu); my $char; my $tchr; my $text = '';
+sub CPik{
+  my $main = shift;my($keey,$valu);my $char;my $tchr;my $text = '';
   my $self = bless({}, ref($main));
-  my $cmov; my $pick; my $done = 0;
+  my $cmov;my $pick;my $done = 0;
 #    ' ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿','ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß',
   my @bchz = ( 'X', '@', '#', '$', 'Û', '²', '±', '°'); # block chars
   my @styz = ( 'barz', 'blox', 'squr' ); # color display styles
-  foreach my $attr ( $self->AttrNamz() ) {
+  for my $attr($self->AttrNamz()){
     $self->{$attr} = $self->DfltValu($attr); # init defaults
   }
   # special CPik window defaults
@@ -2676,7 +2678,7 @@ sub CPik {
   $self->{'_text'} = [ ' ' ];
   $self->{'_dtfc'} =   'G';
   $self->{'_dtbc'} =   'u';
-  if($self->{'_flagclru'}) {
+  if($self->{'_flagclru'}){
     $self->{'_fclr'} = [ $self->{'_dtfc'} ];
     $self->{'_bclr'} = [ $self->{'_dtbc'} ];
   }
@@ -2694,20 +2696,20 @@ sub CPik {
   $self->{'_styl'} =   'barz';# style name
   $self->{'_bndx'} =     0;   # block index
   $self->{'_bchr'} =   'X';   # block char
-  foreach(@KMODNAMZ) { $self->{'_kmod'}->{$_} = 0; }
+  for(@KMODNAMZ){ $self->{'_kmod'}->{$_} = 0; }
   # there were init params with no colon (classname)
-  while(@_) {
+  while(@_){
     ($keey, $valu)=(shift, shift);
-    if(defined($valu)) {
-      if     ($keey =~ /^_*....$/) {
+    if(defined($valu)){
+      if     ($keey =~ /^_*....$/){
         $keey =~ s/^_*//;
         $self->{"_$keey"} = $valu;
-      } else {
-        foreach my $attr ( $self->AttrNamz() ) {
+      }else{
+        for my $attr($self->AttrNamz()){
           $self->{$attr} = $valu if($attr =~ /$keey/i);
         }
       }
-    } else {
+    }else{
       $self->{'_styl'} = $keey;
     }
   }
@@ -2715,8 +2717,8 @@ sub CPik {
   $self->{'_styl'} = $styz[$self->{'_sndx'}];
   $self->{'_bndx'} = $self->{'_bchr'} if($self->{'_bchr'} =~ /^\d+$/);
   $self->{'_bchr'} = $bchz[$self->{'_bndx'}];
-  if($self->{'_widt'} < length($self->{'_titl'}) + 4) {
-    $self->{'_widt'} = length($self->{'_titl'}) + 4;
+  if($self->{'_widt'} < length($self->{'_titl'}) + 4){
+    $self->{ '_widt'} = length($self->{'_titl'}) + 4;
   }
   $self->{'_ycrs'} = $self->{'_hndx'};
   $self->{'_xcrs'} = 0;
@@ -2724,89 +2726,85 @@ sub CPik {
   $self->Updt(1);
   $self->{'_wind'} = newwin($self->{'_hite'}, $self->{'_widt'},
                             $self->{'_yoff'}, $self->{'_xoff'});
-  unless(exists($self->{'_wind'}) && defined($self->{'_wind'})) {
+  unless(exists($self->{'_wind'}) && defined($self->{'_wind'})){
     croak "!*EROR*! Curses::Simp::CPik could not create new window with hite:$self->{'_hite'}, widt:$self->{'_widt'}, yoff:$self->{'_yoff'}, xoff:$self->{'_xoff'}!\n";
   }
   $self->FlagCVis(); # set cursor visibility to new object state
   $self->BildBlox(); # build color block data into @text,@fclr,@bclr && Draw()
   $self->Move($self->{'_hndx'}, 0);
-  while(!defined($char) || !$done) {
+  while(!defined($char) || !$done){
     $char = $self->GetK(-1);
-    if($char =~ /^SDLK_(RETURN|[0-9A-FRGYUPW])$/i) { # gonna be done
+    if($char =~ /^SDLK_(RETURN|[0-9A-FRGYUPW])$/i){ # gonna be done
       $char =~ s/^SDLK_//;
-      if     ($char =~ /^[BRGYUPCW]$/i) {
+      if     ($char =~ /^[BRGYUPCW]$/i){
         $pick = $char;
         $pick = uc($pick) if($self->{'_kmod'}->{'KMOD_SHIFT'});
-      } else {
+      }else{
         $self->{'_hndx'} = dec(uc($char)) unless($char =~ /^RETURN$/);
         $pick = $telc[      ($self->{'_hndx'} %  8)];
         $pick = uc($pick) if($self->{'_hndx'} >= 8);
       }
       $done = 1;
-    } else {
+    }else{
       $tchr =  $char;
       $tchr =~ s/^SDLK_//;
       $cmov = 0;
-      if     ($tchr eq 'PAGEUP') { # Page keys cycle Block Char
+      if    ($tchr eq 'PAGEUP'  ){ # Page keys cycle Block Char
         $self->{'_bndx'}++;
         $self->{'_bndx'} = 0 if($self->{'_bndx'} == @bchz);
-      } elsif($tchr eq 'PAGEDOWN') {
+      }elsif($tchr eq 'PAGEDOWN'){
         $self->{'_bndx'} = @bchz unless($self->{'_bndx'});
         $self->{'_bndx'}--;
-      } elsif($tchr eq 'END') {    # Home/End cycles layout Style
+      }elsif($tchr eq 'END'     ){ # Home/End cycles layout Style
         $self->{'_sndx'}++;
         $self->{'_sndx'} = 0 if($self->{'_sndx'} == @styz);
-      } elsif($tchr eq 'HOME') {
+      }elsif($tchr eq 'HOME'    ){
         $self->{'_sndx'} = @styz unless($self->{'_sndx'});
         $self->{'_sndx'}--;
       }
       $self->{'_bchr'} = $bchz[$self->{'_bndx'}];
       $self->{'_styl'} = $styz[$self->{'_sndx'}];
-      if     ($self->{'_styl'} eq 'barz') {
-        if     ($tchr eq 'LEFT'  or $tchr eq 'UP') {
+      if     ($self->{'_styl'} eq 'barz'){
+        if    ($tchr eq 'LEFT'  or $tchr eq 'UP'  ){
           $self->{'_hndx'} = 16 unless($self->{'_hndx'});
           $self->{'_hndx'}--;
-        } elsif($tchr eq 'RIGHT' or $tchr eq 'DOWN') {
+        }elsif($tchr eq 'RIGHT' or $tchr eq 'DOWN'){
           $self->{'_hndx'}++;
           $self->{'_hndx'} = 0 if($self->{'_hndx'} == 16);
         }
-      } elsif($self->{'_styl'} eq 'blox') {
-        if     ($tchr eq 'DOWN'  or $tchr eq 'UP') {
+      }elsif($self->{'_styl'} eq 'blox'){
+        if    ($tchr eq 'DOWN'  or $tchr eq 'UP'){
           $self->{'_hndx'} +=  8;
           $self->{'_hndx'} -= 16 if($self->{'_hndx'} >= 16);
-        } elsif($tchr eq 'LEFT') {
+        }elsif($tchr eq 'LEFT' ){
           $self->{'_hndx'} = 16 unless($self->{'_hndx'});
           $self->{'_hndx'}--;
-        } elsif($tchr eq 'RIGHT') {
+        }elsif($tchr eq 'RIGHT'){
           $self->{'_hndx'}++;
           $self->{'_hndx'} = 0 if($self->{'_hndx'} == 16);
         }
-      } elsif($self->{'_styl'} eq 'squr') {
-        if     ($tchr eq 'UP') {
+      }elsif($self->{'_styl'} eq 'squr'){
+        if    ($tchr eq 'UP'   ){
           $self->{'_hndx'} -=  4;
           $self->{'_hndx'} += 16 if($self->{'_hndx'} < 0);
-        } elsif($tchr eq 'DOWN') {
+        }elsif($tchr eq 'DOWN' ){
           $self->{'_hndx'} +=  4;
           $self->{'_hndx'} -= 16 if($self->{'_hndx'} >= 16);
-        } elsif($tchr eq 'LEFT') {
+        }elsif($tchr eq 'LEFT' ){
           $self->{'_hndx'} = 16 unless($self->{'_hndx'});
           $self->{'_hndx'}--;
-        } elsif($tchr eq 'RIGHT') {
+        }elsif($tchr eq 'RIGHT'){
           $self->{'_hndx'}++;
           $self->{'_hndx'} = 0 if($self->{'_hndx'} == 16);
         }
-      }
-      $self->BildBlox();
+      } $self->BildBlox();
     }
-  }
-  # delete the CPik window, redraw rest
-  delwin($self->{'_wind'});
+  } delwin($self->{'_wind'}); # delete the CPik window, redraw rest
   $main->ShokScrn(2);
   $main->FlagCVis(); # reset  cursor visibility to calling object state
   return($pick);     # return picked color code
 }
-
-sub BrwsHelp { # BrwsHelp() just prints a help text message for Brws()
+sub BrwsHelp{ # BrwsHelp() just prints a help text message for Brws()
   my $self = shift;
      $self->Mesg('type' => 'help',
                  'titl' => 'File / Directory Browser Help: (F1)',
@@ -2839,7 +2837,6 @@ or have their drop state toggled with the tilde '~' or backtick '`' keys.
   The 'Cancel' button quits without making a selection.
 ");
 }
-
 #  The '=C' button is supposed to look like a wrench for configuration.
 #    Pressing enter on it will bring up the Browse configuration screen.
 #  The 'md' button allows you to make a new directory in the current path.
@@ -2857,7 +2854,7 @@ or have their drop state toggled with the tilde '~' or backtick '`' keys.
 #  The 'Filter:' drop down lets you specify what globbing should happen in
 #    'Path:' to populate the main view.
 #  The 'Cancel' button quits without making a selection.
-sub BrwsCnfg { # BrwsCnfg() brings up a dialog of checkboxes for elements
+sub BrwsCnfg{ # BrwsCnfg() brings up a dialog of checkboxes for elements
   my $self = shift; my $char; my $cndx = 0;
   my %cdsc = ('_cnfg' => '=C - Configuration       Button',
               '_mkdr' => 'md - Make Directory      Button',
@@ -2875,7 +2872,7 @@ sub BrwsCnfg { # BrwsCnfg() brings up a dialog of checkboxes for elements
     'yoff' => $self->{'_yoff'}, 'xoff' => $self->{'_xoff'}, 'flagsdlk' => 1,
     'mesg' => " Tab or Arrows go between fields, Space toggles, Enter accepts all.",
   );
-  for(my $indx = 0; $indx < @{$self->{'_elem'}}; $indx++) { # make ckboxes
+  for(my $indx=0;$indx<@{$self->{'_elem'}};$indx++){ # make ckboxes
     $cfgb->{'_cbob'}->{ $self->{'_elem'}->[$indx] } = $cfgb->Mesg(
       'type' => 'ckbx',
       'yoff' => ($self->{'_yoff'} + ($indx * 2) + 4),
@@ -2884,18 +2881,18 @@ sub BrwsCnfg { # BrwsCnfg() brings up a dialog of checkboxes for elements
       "$cdsc{$self->{'_elem'}->[$indx]} Visible"
     );
   }
-  while(!defined($char) || $char ne 'SDLK_RETURN') {
+  while(!defined($char) || $char ne 'SDLK_RETURN'){
     $char = $cfgb->{'_cbob'}->{ $self->{'_elem'}->[ $cndx ] }->Focu();
-    if     ($char =~ /^SDLK_(TAB|DOWN|j)$/) {
+    if    ($char =~ /^SDLK_(TAB|DOWN|j)$/){
       $cndx++;
       $cndx = 0 if($cndx >= @{$self->{'_elem'}});
-    } elsif($char =~ /^SDLK_(UP|k)$/ ||
-           ($char eq 'SDLK_u' && $cfgb->{'_cbob'}->{ $self->{'_elem'}->[ $cndx ] }->{'_kmod'}->{'KMOD_CTRL'})) {
+    }elsif($char =~ /^SDLK_(UP|k)$/ ||
+          ($char eq 'SDLK_u' && $cfgb->{'_cbob'}->{ $self->{'_elem'}->[ $cndx ] }->{'_kmod'}->{'KMOD_CTRL'})){
       $cndx = @{$self->{'_elem'}} unless($cndx);
       $cndx--;
     }
   }
-  for(my $indx = 0; $indx < @{$self->{'_elem'}}; $indx++) { # make ckboxes
+  for(my $indx=0;$indx<@{$self->{'_elem'}};$indx++){ # make ckboxes
     $self->{'_eflz'}->{ $self->{'_elem'}->[$indx] } =
       $cfgb->{'_cbob'}->{ $self->{'_elem'}->[$indx] }->{'_stat'};
     $cfgb->{'_cbob'}->{ $self->{'_elem'}->[$indx] }->DelW();
@@ -2904,10 +2901,9 @@ sub BrwsCnfg { # BrwsCnfg() brings up a dialog of checkboxes for elements
   $self->BildBrws(1);
   return();
 }
-
-sub BrwsCdUp { # BrwsCdUp() just moves the browse path up one directory
+sub BrwsCdUp{ # BrwsCdUp() just moves the browse path up one directory
   my $self = shift;
-  if($self->{'_path'} =~ s/^(.*\/).+\/?$/$1/) {
+  if($self->{'_path'} =~ s/^(.*\/).+\/?$/$1/){
     $self->{'_bobj'}->{'_path'}->{'_text'}->[
       ($self->{'_bobj'}->{'_path'}->{'_lndx'} + 1) ] = $self->{'_path'};
     $self->{'_bobj'}->{'_path'}->{'_dtxt'}           = $self->{'_path'};
@@ -2918,7 +2914,6 @@ sub BrwsCdUp { # BrwsCdUp() just moves the browse path up one directory
     $self->{'_bobj'}->{'_path'}->{'_echg'} = 1;
   }
 }
-
 # BildBrws() is a utility of Brws() which creates or updates all the
 #   elements of a Browse Window.
 #  Brws() bare-bones dialog should look something like:
@@ -2963,36 +2958,36 @@ sub BrwsCdUp { # BrwsCdUp() just moves the browse path up one directory
 #  ==== box is highlighted (Enter selects)
 #    Ultimately, Brws() should be able to handle easy Browsing for
 #      Files or Directories for any Open/SaveAs/etc. purposes
-sub BildBrws {
+sub BildBrws{
   my $self = shift; my $updt = shift || 0; my $indx;
-  $self->CVis(); # set cursor visibility to main Brws object state
+  $self->FlagCVis(); # set cursor visibility to main Brws object state
   $self->Draw();
-  for($indx = 0; $indx < @{$self->{'_elem'}}; $indx++) {
-    if(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}) {
+  for($indx=0;$indx<@{$self->{'_elem'}};$indx++){
+    if(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}){
       $self->{'_endx'}++;
       $self->{'_endx'} = 0 if($self->{'_endx'} == @{$self->{'_elem'}});
     }
   } # this for && below if make sure a visible element is indexed
-  if(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}) {
+  if(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}){
     $self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]} = 1;
   }
-  for($indx = 0; $indx < @{$self->{'_elem'}}; $indx++) {
+  for($indx = 0; $indx < @{$self->{'_elem'}}; $indx++){
     my $elem = $self->{'_elem'}->[$indx];
-    if(!$updt || $self->{'_eflz'}->{$elem}) {
-      my ($yoff, $xoff) = ($self->{'_yoff'} + 1, $self->{'_xoff'} + 1);
-      my ($widt, $hite) = ($self->{'_widt'} - 2, $self->{'_hite'} - 2);
-      my $type = 'butn'; my $titl = ''; my $btyp = 1;
-      my $brfc = 'w'; my $brbc = 'k'; my $scrl = 0;
-      my $mesg; my @text; my @fclr; my @bclr;
-      if($self->{'_flagclru'}) { @fclr = ( 'w' ); @bclr = ( 'k' ); }
-      if     ($elem eq '_cnfg') { # do specific settings
+    if(!$updt || $self->{'_eflz'}->{$elem}){
+      my($yoff, $xoff)=($self->{'_yoff'} + 1, $self->{'_xoff'} + 1);
+      my($widt, $hite)=($self->{'_widt'} - 2, $self->{'_hite'} - 2);
+      my $type = 'butn';my $titl =  '';my $btyp = 1;
+      my $brfc =    'w';my $brbc = 'k';my $scrl = 0;
+      my $mesg;my @text;my @fclr;my @bclr;
+      if($self->{'_flagclru'}){ @fclr = ( 'w' ); @bclr = ( 'k' ); }
+      if    ($elem eq '_cnfg'){ # do specific settings
         $hite = 3; $widt = 4;
         $mesg = '=C';
-      } elsif($elem eq '_mkdr') {
+      }elsif($elem eq '_mkdr'){
         $hite = 3; $widt = 4;
         $xoff += 4 if($self->{'_eflz'}->{'_cnfg'});
         $mesg = 'md';
-      } elsif($elem eq '_path') {
+      }elsif($elem eq '_path'){
         $hite = 3;
         if($self->{'_eflz'}->{'_cnfg'}) { $xoff += 4; $widt -= 4; }
         if($self->{'_eflz'}->{'_mkdr'}) { $xoff += 4; $widt -= 4; }
@@ -3000,42 +2995,42 @@ sub BildBrws {
         if($self->{'_eflz'}->{'_help'}) {             $widt -= 4; }
         $type = 'drop';
         $titl = 'Path:';
-        if(exists(  $self->{'_bobj'}->{'_path'})) {
+        if(exists(  $self->{'_bobj'}->{'_path'})){
           @text = @{$self->{'_bobj'}->{'_path'}->{'_text'}};
-          if($self->{'_flagclru'}) {
+          if($self->{'_flagclru'}){
             @fclr = @{$self->{'_bobj'}->{'_path'}->{'_fclr'}};
             @bclr = @{$self->{'_bobj'}->{'_path'}->{'_bclr'}};
           }
-        } else {
+        }else{
           @text = ( $self->{'_path'}, '/home/', '/tmp/' );
         }
-      } elsif($elem eq '_cdup') {
-        $hite = 3; $widt = 4;
+      }elsif($elem eq '_cdup'){
+        $hite  = 3;$widt = 4;
         $xoff  = $self->{'_widt'} - 3;
         $xoff -= 4 if($self->{'_eflz'}->{'_help'});
-        $mesg = '..';
-      } elsif($elem eq '_help') {
-        $hite = 3; $widt = 4;
+        $mesg  = '..';
+      }elsif($elem eq '_help'){
+        $hite  = 3;$widt = 4;
         $xoff  = $self->{'_widt'} - 3;
-        $mesg = '??';
-      } elsif($elem eq '_view') {
+        $mesg  = '??';
+      }elsif($elem eq '_view'){
         my $dtdt = 0;
         if($self->{'_eflz'}->{'_cnfg'} ||
            $self->{'_eflz'}->{'_mkdr'} ||
            $self->{'_eflz'}->{'_path'} ||
            $self->{'_eflz'}->{'_cdup'} ||
-           $self->{'_eflz'}->{'_help'}) { $yoff += 3; $hite -= 3; }
+           $self->{'_eflz'}->{'_help'}){ $yoff += 3;$hite -= 3; }
         if($self->{'_eflz'}->{'_file'} ||
            $self->{'_eflz'}->{'_open'} ||
-           $self->{'_eflz'}->{'_cncl'}) {             $hite -= 3; }
-        if($self->{'_eflz'}->{'_filt'}) {             $hite -= 3; }
-        if(exists(  $self->{'_bobj'}->{'_view'})) {
+           $self->{'_eflz'}->{'_cncl'}){            $hite -= 3; }
+        if($self->{'_eflz'}->{'_filt'}){            $hite -= 3; }
+        if(exists(  $self->{'_bobj'}->{'_view'})){
           @text = @{$self->{'_bobj'}->{'_view'}->{'_text'}};
-          if($self->{'_flagclru'}) {
+          if($self->{'_flagclru'}){
             @fclr = @{$self->{'_bobj'}->{'_view'}->{'_fclr'}};
             @bclr = @{$self->{'_bobj'}->{'_view'}->{'_bclr'}};
           }
-          if($self->{'_bobj'}->{'_view'}->{'_echg'}) {
+          if($self->{'_bobj'}->{'_view'}->{'_echg'}){
             $self->{'_choi'} = $text[($self->{'_vndx'} - $self->{'_vscr'})];
             $self->{'_bobj'}->{'_file'}->{'_curs'} = length($self->{'_choi'});
             $self->{'_bobj'}->{'_file'}->{'_xcrs'} = length($self->{'_choi'});
@@ -3044,164 +3039,221 @@ sub BildBrws {
         if(!$updt || $self->{'_bobj'}->{'_mkdr'}->{'_echg'} ||
                      $self->{'_bobj'}->{'_path'}->{'_echg'} ||
                      $self->{'_bobj'}->{'_view'}->{'_echg'} ||
-                     $self->{'_bobj'}->{'_filt'}->{'_echg'}) {
-          @text = (); if($self->{'_flagclru'}) { @fclr = (); @bclr = (); }
-          unless($self->{'_choi'}) {
+                     $self->{'_bobj'}->{'_filt'}->{'_echg'}){
+          @text = (); if($self->{'_flagclru'}){ @fclr = ();@bclr = (); }
+          unless($self->{'_choi'}){
             $self->{'_vndx'} = 0;
             $self->{'_choi'} = '';
           }
-          unless($self->{'_flaghide'}) {
-            foreach(glob($self->{'_path'} . '.' . $self->{'_filt'})) {
+          unless($self->{'_flaghide'}){
+            for(glob($self->{'_path'} . '.' . $self->{'_filt'})){
               $_ .= '/' if(-d $_);
               s/^$self->{'_path'}//;
               $dtdt = 1 if($_ eq '../');
-              unless($_ eq './') { # || /\.swp$/)  # omit . && .swp
+              unless($_ eq './'){ # || /\.swp$/)  # omit . && .swp
                 push(@text, $_);
-                if(!$self->{'_choi'}) {
-                  if(-f $_) { $self->{'_choi'} = $_; }
-                  else      { $self->{'_vndx'}++;    }
+                if(!$self->{'_choi'}){
+                  if(-f $_){ $self->{'_choi'} = $_; }
+                  else     { $self->{'_vndx'}++;    }
                 }
               }
             }
           }
-          foreach(glob($self->{'_path'} . $self->{'_filt'})) {
+          for(glob($self->{'_path'} . $self->{'_filt'})){
             $_ .= '/' if(-d $_);
             s/^$self->{'_path'}//;
-            unless($_ eq './' || ($_ eq '../' && $dtdt)) { # omit . or 2nd ..
+            unless($_ eq './' || ($_ eq '../' && $dtdt)){ # omit . or 2nd ..
               push(@text, $_);
-              if(!$self->{'_choi'}) {
-                if(-f $_) { $self->{'_choi'} = $_; }
-                else      { $self->{'_vndx'}++;    }
+              if(!$self->{'_choi'}){
+                if(-f $_){ $self->{'_choi'} = $_; }
+                else     { $self->{'_vndx'}++;    }
               }
             }
           }
           $self->{'_vndx'} = (@text - 1) if($self->{'_vndx'} > (@text - 1));
-          if($self->{'_flagflhi'}) {
-            my $lsfc; my $lsbc = 'k'; # need background colors for listing?
-            foreach(@text) {
+          if($self->{'_flagflhi'}){
+            my $lsfc;my $lsbc = 'k'; # need background colors for listing?
+            for(@text){
               my $fulf = $self->{'_path'} . $_;
-                                  $lsfc = $GLBL{'TESTMAPP'}->{'NORMAL'};
-              if     (-d $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'DIR'};
-              } elsif(-l $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'LINK'};
-              } elsif(-p $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'FIFO'};
-              } elsif(-S $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'SOCK'};
-              } elsif(-b $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'BLK'};
-              } elsif(-c $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'CHR'};
-              #} elsif(-O $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'ORPHAN'}; # don't know test
-              } elsif(-x $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'EXEC'};
-              } elsif(-f $fulf) { $lsfc = $GLBL{'TESTMAPP'}->{'FILE'};
-                foreach my $regx (keys(%{$GLBL{'DFLTMAPP'}})) { # test defaults
+                                $lsfc = $GLBL{'TESTMAPP'}->{'NORMAL'};
+              if    (-d $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'DIR'};
+              }elsif(-l $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'LINK'};
+              }elsif(-p $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'FIFO'};
+              }elsif(-S $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'SOCK'};
+              }elsif(-b $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'BLK'};
+              }elsif(-c $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'CHR'};
+             #}elsif(-O $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'ORPHAN'}; # don't know test
+              }elsif(-x $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'EXEC'};
+              }elsif(-f $fulf){ $lsfc = $GLBL{'TESTMAPP'}->{'FILE'};
+# # lsptBl02du:stripXtraDblSpcK0lMzB4NCesk8pk0lRk0dzhvbNad3d;mABpr0cS~/.lsrc wiXtra0ptz2betRgl0b&&PCREk0lRz4fyLtypzas$ENV{LsP8}?;
+#ub lspt{ #2du:f0ld$ENV{LsP8}n2`lspt`n2`ls`&&evN2LEUzCurzSFUCKnsteduvANSIesk8pk0dz;r3d0NCSk8pk0dzazgl0bLFUCKnmz2mkbetREsc8NCRtSKR8;add $prmz optn2~/.lsrc;
+# my @ldat=`ls -lF --full-time @_`;my $t0tl='0';my %lsp8;my %lspt;my($list,$prmz,$blsz,$pwnr,$grup,$fsiz,$dayt,$tyme,$tz0n,$fnam,$cmpr,$b6bs,$b6fs);
+#    @ldat=split(/\n/,$list);$list="$Sk80;33mt$Sk81;33m0$Sk80;33mtl$Sk81;37m:$Sk81;34m$t0tl$Sk8G\n"; #fnd longSt lIn&&strip dbl-spc colMz..
+# my $long=0;for(@ldat){$long = length($_) if($long < length($_))};for my $cndx (1..$long){my $dspf=0;for(@ldat){$dspf=1 if(substr($_,$cndx-1,2) ne '  ');}
+#   if(!$dspf){for(@ldat){substr($_,$cndx-1,2)=' '}}}$list.=join("\n",@ldat)."\n$list";print $list; # <- th@ shud strip'  'colMzbutEsc8pzRmisAlInNg!
+# no=00:           NORMAL                  global   dflt (altho idealy evrythng shud b smthng)
+# fi=00:           FILE                    normal   FILE
+# ln=01;37:        LINK                    symbolic LINK (if set to 'target' instead of colr;code;numz,color inherits that of file symlinked to)
+# mh???:           #ULTIHARDLINK           regular  file with more than one link   (used2b just "HARDLINK" with 44;37 but coreutils chngd aroun 9A68d7P)
+# or=05;01;01;46:  ORPHAN                  sym------link to nonexistent file
+# mi=05;01;01;41:  MISSING                   && the MISSING file it points to (blinkng alert?) #.ANSI.01.30  01;30 # bright blacK
+# ex=01;32:        EXEC                    file w/ EXECute permission                 (+x    ) #.ANSI.01.31  01;31 # bright Red
+# su=01;37;01;42:  SETUID                  file that is        SETUID                 (   u+s) #.ANSI.01.32  01;32 # bright Green
+# sg=00;30;00;43:  SETGID                  file that is        SETGID                 (   g+s) #.ANSI.01.33  01;33 # bright Yellow
+# di=01;34:        DIR                     DIRectory                                           #.ANSI.01.34  01;34 # bright Blue
+# st=01;37;01;44:  STICKY                  dir  w/ STICKY bit  set && !other-writable (+t,o-w) #.ANSI.01.35  01;35 # bright Magenta (Purple)
+# ow=01;34;01;42:  OTHER_WRITABLE          dir  w/ sticky bit !set &&  OTHER-WRITABLE (   o+w) #.ANSI.01.36  01;36 # bright Cyan
+# tw=00;30;00;45:  STICKY_OTHER_WRITABLE   dir  w/ STICKY bit  set &&  OTHER-WRITABLE (+t,o+w) #.ANSI.01.37  01;37 # bright White     zsh:'%{' ANSI '%}'
+# pi=00;33;00;40:  FIFO                    pipe  (First-In,First-Out)               (orig bcam 40;33 with coreutils chng2 /etc/DIR_COLORS aroun 9A68d7P)
+# so=01;35:        SOCK                    SOCKet
+# do=01;35:        DOOR                    DOOR  (not sure why this was commented out before?) I'd gues this is POSIX||BSD-centric but !in Linux FylSys?
+# bd=01;33;01;40:  BLK                     BLocK     device driver
+# cd=01;33;01;40:  CHR                     CHaRacter device driver         #*.2du=01;33:*..#add0thRlsfyLtypz,symlnx..
+# for(split(':',$ENV{'LS_COLORS'})){my ($g2re,$fx2e);
+#   if   (/^([^=]*[\*\+\?]+[^=]+)=0(.+)$/){($g2re,$fx2e)=($1,"$Sk8p$2m");$g2re=~s/([.])/\\$1/g;$g2re=~s/(\?|(\*|\+))/.$2/g;$lsp8{qr/^.*\s*$g2re$/}=$fx2e}
+#   elsif(              /^([^=]+)=0(.+)$/){($g2re,$fx2e)=($1,"$Sk8p$2m");                                                  $lspt{         $g2re  }=$fx2e}}
+# for(@ldat){if(($prmz,$blsz,$pwnr,$grup,$fsiz,$dayt,$tyme,$tz0n,$fnam)= /^(\S{10})(\s+\d+)(\s+\S+)(\s+\S+\s+)(\d+)\s+(\S{10})\s+(\S+)(\s+\S+)\s+(.*)/){
+#   $b6bs=b64($blsz);$b6bs=' 'x(length($blsz)-length($b6bs)).$b6bs;my $b6tt=$tz0n;my $b6tz;if( $b6tt=~s/(00$|^\s+|^[-+]?0?)//g){$b6tz=$1.b64($b6tt)}
+#   $b6fs=b64($fsiz);$b6fs=' 'x(length($fsiz)-length($b6fs)).$b6fs;my($lar0,$k0lx,$l,$k);$l=0; $b6tz=~s/^([-+]?)0?(.*)$/$Sk8W$1$Sk8G$2$Sk80;37m/;my $ttim;
+#   $cmpr=$prmz;my @fldz=split(/-/,$dayt);$fldz[1]=~s/^0//;$fldz[1]--;my $stat="$Mon[$fldz[1]] $fldz[2] $tyme $fldz[0]"; @fldz=split(/\./,$tyme);my $tnam;
+#   $cmpr=~s/^(d)/$Sk8B$1/;$fldz[2]= '0.'.$fldz[1];$fldz[2]*=60;$fldz[2]=int($fldz[2]);$stat=~s/\.$fldz[1]/:$fldz[2]/;my $ptim=Time::PT->new('verbose'=>$stat);
+#   $cmpr=~s/^(-)/$Sk8W$1/;$ttim= $ptim->color('ansi').$Sk8k;$ttim.='0'x(7-int((length($ttim)-7)/8)) if(length($ttim)<(8*7 +7));s/$dayt\s+$tyme/$ttim$Sk8G/;
+#   $cmpr=~s/rwx/${Sk8R}7/g;$cmpr=~s/-wx/$Sk80;34m3/g;$cmpr=~s/rws/$Sk81;33m7/g;$cmpr=~s/rwt/$Sk81;35m7/g;
+#   $cmpr=~s/rw-/${Sk8C}6/g;$cmpr=~s/-w-/$Sk80;33m2/g; # stil wnt2Uz ~/.lsrc 2mABNcod prmz asumngPXX(400,644,755..[azB64?])2ovrIdfylk0lrzby.X10shn
+#   $cmpr=~s/r-x/${Sk8M}5/g;$cmpr=~s/--x/$Sk80;32m1/g;$cmpr=~s/r-s/$Sk80;33m5/g;$cmpr=~s/r-t/$Sk80;35m5/g; #Uzr&&Grp?
+#   $cmpr=~s/r--/${Sk8B}4/g;$cmpr=~s/---/${Sk8G}0/g  ;$grup=~s/\s$//; #?prmzRblszYpwnrCgrupPfsiz?dayt?tymeGtz0n?fnam..
+#   for my $shgl (sort keys(%lsp8)){$tnam=$fnam;if($tnam=~/$shgl/){    $k= $lsp8{$shgl};$tnam= $k.$tnam;            print "tb4b:$tnam:k:$k:\n" if($Dbug); #Gl0b
+#        $tnam=~s/^(.*?)(\s+|\e\[[^m]+m|\s(->)\s)*(.+?)((\.)([^.]+))?$/$k$1$Sk8W$3$k$4$Sk8W$6$k$7/;#$k=~s/\e\[/\\e\\[/g;
+#        $tnam=~s/(([-._*>])+|\s+(->)\s+)/$Sk8W$2$3$k/g;$tnam=~s/([-])+/$Sk8Y$1$k/g;$tnam=~s/([_])+/$Sk8C$1$k/g;    print "taft:$tnam:k:$k:\n" if($Dbug);last}}
+#   for my $svgl (keys(%lspt)){$k=$k0lx=$lspt{$svgl};my( $bgin,$fsnm )=('', $fnam);#elsif($svgl..=~/^(\e\[[^m]+m)?(.+->.+)$/)&& -l $fsnm)){s/../$k$fsnm} #Typz
+#    if   ($svgl eq'ex'&& (($bgin,$fsnm)= $fnam=~/^(.*?)(.+?)\*+$/   )&& -x $fsnm){if(!-d $fsnm){  $fsnm=~s/\*$//;
+#          $list.="\n:$svgl=e\$Sk8p[$lspt{$svgl}:$fsnm:e\$Sk8W:*:..G:\n" if($Dbug);$tnam=~s/^(.*?)($fsnm)(\*)*$/$1$k$2$Sk8W$3/}}
+#    elsif($svgl eq'di'&& (($bgin,$fsnm)= $fnam=~/^(.*?)(.+?)\/*$/   )&& -d $fsnm){$tnam=~s/^(.*?)($fsnm)(\/)*$/$1$k$2$Sk8Y$3/ }}#$tnam.=$Sk8G;
+#   s/^$prmz$blsz$pwnr$grup(.*?)$fsiz(.*?)$tz0n(.*?)$fnam(.*)/$cmpr$Sk8R$b6bs$Sk8Y$pwnr$Sk8C$grup$Sk8M$b6fs$2$b6tz$3$tnam/;#$4
+#   if(/^.*[.-]([0-9A-Za-z._][1-9A-C][1-9A-V][0-9A-Za-x]{4})(\.\S{1,4})?/){my($ptvr,$x10n)=($1,$2);$ptim=undef;$ptim = Time::PT->new($ptvr);
+#     $ttim=$ptim->color('ansi')."$Sk80;30m" ;$ttim.='0'x(7-int((length($ttim)-7)/8)) if(length($ttim)<(8*7 +7));s/$ptvr/$ttim$Sk8G/}}
+# elsif(/^total\s+(\d+)/){$t0tl=b64($1);$_=''}$list.=$_ if /\S/}@ldat=split(/\n/,$list);$list="$Sk80;33mt${Sk8Y}0$Sk80;33mtl$Sk8W:$Sk8B$t0tl$Sk8G\n";
+# $list.=join("\n",@ldat)."\n$list";print $list}
+                my %CLUT =('0;30' => 'k','1;30' => 'K','0;31' => 'r','1;31' => 'R','0;32' => 'g','1;32' => 'G','0;33' => 'O','1;33' => 'Y',
+                           '0;34' => 'b','1;34' => 'B','0;35' => 'p','1;35' => 'P','0;36' => 'c','1;36' => 'C','0;37' => 'w','1;37' => 'W');
+                for(split(':',$ENV{'LS_COLORS'})){      my($g2re,$ansn);
+                  if    (/^([^=]*[\*\+\?]+[^=]+)=0(.+)$/){($g2re,$ansn)=($1,$2);$g2re=~s/([.])/\\$1/g;
+                                                                                $g2re=~s/(\?|(\*|\+))/.$2/g;#$lsp8{qr/^.*\s*$g2re$/}=$ansn;
+                  }elsif(              /^([^=]+)=0(.+)$/){($g2re,$ansn)=($1,$2);                            #$lspt{         $g2re  }=$ansn;
+                  }$GLBL{'OVERMAPP'}->{qr/^.*\s*$g2re$/} = $CLUT{$ansn} if(exists($CLUT{$ansn}));
+                }
+                for my $regx(keys(%{$GLBL{'DFLTMAPP'}})){ # test defaults
                   $lsfc = $GLBL{'DFLTMAPP'}->{$regx} if($fulf =~ /$regx/i);
                 }
-                foreach my $regx (keys(%{$GLBL{'OVERMAPP'}})) { # test overridz
+                for my $regx(keys(%{$GLBL{'OVERMAPP'}})){ # test overridz
                   $lsfc = $GLBL{'OVERMAPP'}->{$regx} if($fulf =~ /$regx/i);
                 }
               }
-              if($self->{'_flagclru'}) {
+              if($self->{'_flagclru'}){
                 push(@fclr, $lsfc);
                 push(@bclr, $lsbc);
               }
             }
-          } elsif($self->{'_flagclru'}) { # don't highlight different files
-            foreach(@text) {
+          }elsif($self->{'_flagclru'}){ # don't highlight different files
+            for(@text){
               push(@fclr, 'w');
               push(@bclr, 'k');
             }
           }
-          if($self->{'_vndx'} != -1) {
+          if($self->{'_vndx'} != -1){
             substr($bclr[$self->{'_vndx'}], 0, 1,
               substr(    $self->{'_hibc'},  0, 1));
-            if($self->{'_flagclru'} && !$self->{'_flagbgho'}) { # !BkGr Hi Only
+            if($self->{'_flagclru'} && !$self->{'_flagbgho'}){ # !BkGr Hi Only
               substr($fclr[$self->{'_vndx'}], 0, 1, # so get foreground too
                 substr(    $self->{'_hifc'},  0, 1));
             }
           }
-          if($self->{'_vndx'} > ($hite - 3)) { # handle view scrolling
+          if($self->{'_vndx'} > ($hite - 3)){ # handle view scrolling
             my $vndx = $self->{'_vndx'};
-            while($vndx-- > ($hite - 3)) {
+            while($vndx-- > ($hite - 3)){
               push(@text, shift(@text));
               if($self->{'_flagclru'}) { shift(@fclr); shift(@bclr); }
             }
             $self->{'_vscr'} = ($self->{'_vndx'} - ($hite - 3));
-          } else {
+          }else{
             $self->{'_vscr'} = 0;
           }
         }
         $scrl = 1 if(@text > ($hite - 2));
-      } elsif($elem eq '_file') {
+      }elsif($elem eq '_file'){
         $hite = 3;
         $yoff = $self->{'_hite'} - 2;
-        if   ($self->{'_eflz'}->{'_filt'}) { $yoff -= 3;              }
-        elsif($self->{'_eflz'}->{'_cncl'}) {             $widt -= 12; }
-        if   ($self->{'_eflz'}->{'_open'}) {             $widt -= 12; }
+        if   ($self->{'_eflz'}->{'_filt'}){ $yoff -= 3;              }
+        elsif($self->{'_eflz'}->{'_cncl'}){             $widt -= 12; }
+        if   ($self->{'_eflz'}->{'_open'}){             $widt -= 12; }
         $type = 'drop';
         $titl = 'Filename:';
-        if(exists(  $self->{'_bobj'}->{'_file'})) {
+        if(exists(  $self->{'_bobj'}->{'_file'})){
           @text = @{$self->{'_bobj'}->{'_file'}->{'_text'}};
-          if($self->{'_flagclru'}) {
+          if($self->{'_flagclru'}){
             @fclr = @{$self->{'_bobj'}->{'_file'}->{'_fclr'}};
             @bclr = @{$self->{'_bobj'}->{'_file'}->{'_bclr'}};
           }
         }
-        if($updt || !@text) {
+        if($updt || !@text){
           $self->{'_bobj'}->{'_file'}->{'_data'} =        $self->{'_choi'};
           @text                                  =      ( $self->{'_choi'} );
         }
-      } elsif($elem eq '_open') {
+      }elsif($elem eq '_open'){
         $hite = 3; $widt = 12;
         $yoff = $self->{'_hite'} -  2;
         $xoff = $self->{'_widt'} - 11;
-        if   ($self->{'_eflz'}->{'_filt'}) { $yoff -= 3;              }
-        elsif($self->{'_eflz'}->{'_cncl'}) {             $xoff -= 12; }
+        if   ($self->{'_eflz'}->{'_filt'}){ $yoff -= 3;              }
+        elsif($self->{'_eflz'}->{'_cncl'}){             $xoff -= 12; }
         $btyp = 4;
         $mesg  = ' ' x int((10 - length($self->{'_acpt'})) / 2);
         $mesg .= $self->{'_acpt'}; # $mesg = '   Open   ';
         $mesg .= ' ' x (10 - length($mesg));
-      } elsif($elem eq '_filt') {
+      }elsif($elem eq '_filt'){
         $hite = 3;
         $yoff = $self->{'_hite'} - 2;
-        if($self->{'_eflz'}->{'_cncl'}) {             $widt -= 12; }
+        if($self->{'_eflz'}->{'_cncl'}){             $widt -= 12; }
         $type = 'drop';
         $titl = 'Filter:';
-        if(exists(  $self->{'_bobj'}->{'_filt'})) {
+        if(exists(  $self->{'_bobj'}->{'_filt'})){
           @text = @{$self->{'_bobj'}->{'_filt'}->{'_text'}};
-          if($self->{'_flagclru'}) {
+          if($self->{'_flagclru'}){
             @fclr = @{$self->{'_bobj'}->{'_filt'}->{'_fclr'}};
             @bclr = @{$self->{'_bobj'}->{'_filt'}->{'_bclr'}};
           }
-        } else {
+        }else{
           @text = ( $self->{'_filt'}, '.*', '*.pl' );
         }
-      } elsif($elem eq '_cncl') {
+      }elsif($elem eq '_cncl'){
         $hite = 3; $widt = 12;
         $yoff = $self->{'_hite'} -  2;
         $xoff = $self->{'_widt'} - 11;
         $mesg = '  Cancel  ';
       }
-      if($self->{'_endx'} == $indx) {
+      if($self->{'_endx'} == $indx){
         $btyp =  4;
         $brfc = 'C';
         $brbc = 'u';
       }
       @text = split(/\n/, $mesg) if($mesg);
-      if($updt && $self->{'_bobj'}->{$elem}) { # just update existing elements
-        if($self->{'_flagclru'}) {
+      if($updt && $self->{'_bobj'}->{$elem}){ # just update existing elements
+        if($self->{'_flagclru'}){
           $self->{'_bobj'}->{$elem}->Draw(
             'hite' => $hite, 'widt' => $widt, 'yoff' => $yoff, 'xoff' => $xoff,
                              'btyp' => $btyp, 'brfc' => $brfc, 'brbc' => $brbc,
             'text' => [ @text ], 'fclr' => [ @fclr ], 'bclr' => [ @bclr ],
             'flagscrl' => $scrl,
           );
-        } else {
+        }else{
           $self->{'_bobj'}->{$elem}->Draw(
             'hite' => $hite, 'widt' => $widt, 'yoff' => $yoff, 'xoff' => $xoff,
                              'btyp' => $btyp, 'brfc' => $brfc, 'brbc' => $brbc,
             'text' => [ @text ], 'flagscrl' => $scrl,
           );
         }
-      } else {
-        if     ($type eq 'butn') { # create respective elements
-          if($self->{'_flagclru'}) {
+      }else{
+        if     ($type eq 'butn'){ # create respective elements
+          if($self->{'_flagclru'}){
             $self->{'_bobj'}->{$elem} = $self->Mesg(
               'hite' => $hite, 'widt' => $widt,
               'yoff' => $yoff, 'xoff' => $xoff,
@@ -3210,7 +3262,7 @@ sub BildBrws {
               'text' => [ @text ], 'fclr' => [ @fclr ], 'bclr' => [ @bclr ],
               'elmo' => 'brws', 'flagscrl' => $scrl,
             );
-          } else {
+          }else{
             $self->{'_bobj'}->{$elem} = $self->Mesg(
               'hite' => $hite, 'widt' => $widt,
               'yoff' => $yoff, 'xoff' => $xoff,
@@ -3218,8 +3270,8 @@ sub BildBrws {
               'text' => [ @text ], 'elmo' => 'brws', 'flagscrl' => $scrl,
             );
           }
-        } elsif($type eq 'drop') {
-          if($self->{'_flagclru'}) {
+        }elsif($type eq 'drop'){
+          if($self->{'_flagclru'}){
             $self->{'_bobj'}->{$elem} = $self->Prmt(
               'hite' => $hite, 'widt' => $widt,
               'yoff' => $yoff, 'xoff' => $xoff,
@@ -3228,7 +3280,7 @@ sub BildBrws {
               'text' => [ @text ], 'fclr' => [ @fclr ], 'bclr' => [ @bclr ],
               'elmo' => 'brws', 'flagscrl' => $scrl,
             );
-          } else {
+          }else{
             $self->{'_bobj'}->{$elem} = $self->Prmt(
               'hite' => $hite, 'widt' => $widt,
               'yoff' => $yoff, 'xoff' => $xoff,
@@ -3238,21 +3290,20 @@ sub BildBrws {
           }
         }
       }
-    } else {
+    }else{
       $self->{'_eflz'}->{$elem} = undef;
     }
   }
   # reset object changed flags
-  $self->{'_bobj'}->{$_}->{'_echg'} = 0 foreach(@{$self->{'_elem'}});
+  $self->{'_bobj'}->{$_}->{'_echg'} = 0 for(@{$self->{'_elem'}});
 }
-
 # Brws() is a special Curses::Simp object constructor which creates a
 #   file or directory Browse Window.
 # If params are supplied, they must be hash key => value pairs.
-sub Brws {
+sub Brws{
   my $main = shift; my($keey, $valu); my $char; my $tchr; my $choi = '';
   my $self = bless({}, ref($main));   my $indx; my $done = 0;
-  foreach my $attr ( $main->AttrNamz() ) {
+  for my $attr($main->AttrNamz()){
     $self->{$attr} = $main->DfltValu($attr); # init defaults
   }
   # special Brws window defaults
@@ -3271,15 +3322,15 @@ sub Brws {
   $self->{'_text'} = [ ' ' ];
   $self->{'_dtfc'} =   'G';
   $self->{'_dtbc'} =   'u';
-  if($self->{'_flagclru'}) {
+  if($self->{'_flagclru'}){
     $self->{'_fclr'} = [ $self->{'_dtfc'} ];
     $self->{'_bclr'} = [ $self->{'_dtbc'} ];
   }
   $self->{'_elem'} = [ '_cnfg', '_mkdr', '_path', '_cdup', '_help', # elements
                        '_view', '_file', '_open', '_filt', '_cncl' ];
-  $self->{'_eflz'} =     { }; $self->{'_eflz'}->{$_} = 1 foreach(@{$self->{'_elem'}}); # initialize element visibility flags
+  $self->{'_eflz'} =     { }; $self->{'_eflz'}->{$_} = 1 for(@{$self->{'_elem'}}); # initialize element visibility flags
 # BareBones settings below
-#$self->{'_eflz'}->{$_} = 0 foreach('_cnfg','_mkdr','_cdup','_help','_filt');
+#$self->{'_eflz'}->{$_} = 0 for('_cnfg','_mkdr','_cdup','_help','_filt');
   $self->{'_bobj'} =     { }; # Browse Objects (elements)
   $self->{'_brwt'} =  'File'; # Browse type ('File' or 'Dir')
   $self->{'_acpt'} =  'Open'; # acceptance button text like 'Open' or 'SaveAs'
@@ -3298,26 +3349,26 @@ sub Brws {
   $self->{'_vscr'} =     0;   # View SCRolling (to get choice line in view)
   $self->{'_choi'} =    '';   # choice (the chosen file or dir name)
   $self->{'_filt'} =   '*';   # glob filter
-  foreach(@KMODNAMZ) { $self->{'_kmod'}->{$_} = 0; }
+  for(@KMODNAMZ){ $self->{'_kmod'}->{$_} = 0; }
   # there were init params with no colon (classname)
-  while(@_) {
+  while(@_){
     ($keey, $valu)=(shift, shift);
-    if(defined($valu)) {
-      if     ($keey =~ /^_*(....)?....$/) {
+    if(defined($valu)){
+      if     ($keey =~ /^_*(....)?....$/){
         $keey =~ s/^_*//;
         $self->{"_$keey"} = $valu;
-      } else {
-        foreach my $attr ( $self->AttrNamz() ) {
+      }else{
+        for my $attr($self->AttrNamz()){
           $self->{$attr} = $valu if($attr =~ /$keey/i);
         }
       }
-    } else {
+    }else{
       $self->{'_brwt'} = $keey;
     }
   }
   $self->{'_titl'} = "Open $self->{'_brwt'}:" unless($self->{'_titl'});
   if($self->{'_widt'} < length($self->{'_titl'}) + 4) {
-    $self->{'_widt'} = length($self->{'_titl'}) + 4;
+    $self->{ '_widt'} = length($self->{'_titl'}) + 4;
   }
   $self->{'_ycrs'} = $self->{'_hndx'};
   $self->{'_xcrs'} = 0;
@@ -3331,64 +3382,64 @@ sub Brws {
   $self->{'_dndx'} = @DISPSTAK; # add object to display order stack
   push(@DISPSTAK, \$self);
   $self->BildBrws(); # create all element objects
-  while(!defined($char) || !$done) {
+  while(!defined($char) || !$done){
     my $elem = $self->{'_elem'}->[$self->{'_endx'}];
     my $sobj = $self->{'_bobj'}->{$elem};
-    if($sobj->{'_type'} eq 'drop') {
+    if($sobj->{'_type'} eq 'drop'){
       $char = $sobj->Focu(); %{$self->{'_kmod'}} = %{$sobj->{'_kmod'}};
-      $sobj->CVis(0);
-    } else {
+      $sobj->FlagCVis(0);
+    }else{
       $char = $self->GetK(-1);
     }
-    if   ($elem eq '_path') { $self->{'_path'} = $sobj->{'_data'};
-                              $self->{'_path'} =~ s/\/*$/\//;      }
-    elsif($elem eq '_file') { $self->{'_choi'} = $sobj->{'_data'}; }
-    elsif($elem eq '_filt') { $self->{'_filt'} = $sobj->{'_data'}; }
-    if     ($char eq 'SDLK_RETURN') {
-      if     ($elem eq '_cnfg') {
+    if   ($elem eq '_path'){ $self->{'_path'} = $sobj->{'_data'};
+                             $self->{'_path'} =~ s/\/*$/\//;      }
+    elsif($elem eq '_file'){ $self->{'_choi'} = $sobj->{'_data'}; }
+    elsif($elem eq '_filt'){ $self->{'_filt'} = $sobj->{'_data'}; }
+    if   ($char eq 'SDLK_RETURN'){
+      if    ($elem eq '_cnfg'){
         $self->BrwsCnfg();
-      } elsif($elem eq '_mkdr') {
+      }elsif($elem eq '_mkdr'){
         my $mdir = 'New_Dir';
         $self->Prmt('titl'     => "Make Directory: $self->{'_path'} ",
                     'flagescx' => 1, \$mdir);
-        if(length($mdir)) {
+        if(length($mdir)){
           $mdir = $self->{'_path'} .  $mdir unless($mdir =~ /^\//);
-          if(-d $mdir) {
+          if(-d $mdir){
             $self->Mesg('titl' => '!EROR! - Make Directory',
                                   "Directory: \"$mdir\" already exists!");
-          } else {
+          }else{
             mkdir("$mdir", 0700);
-            if(-d $mdir) {
+            if(-d $mdir){
               $self->{'_bobj'}->{'_mkdr'}->{'_echg'} = 1;
-            } else {
+            }else{
               $self->Mesg('titl' => '!EROR! - Make Directory',
                                     "Make directory: \"$mdir\" failed!");
             }
           }
         }
-      } elsif($elem eq '_path') {
+      }elsif($elem eq '_path'){
         $self->{'_bobj'}->{'_path'}->{'_echg'} = 1;
         $self->{'_endx'} = 6; # return from path jumps to file bar
-      } elsif($elem eq '_cdup') {
+      }elsif($elem eq '_cdup'){
         $self->BrwsCdUp();
-      } elsif($elem eq '_help') {
+      }elsif($elem eq '_help'){
         $self->BrwsHelp();
-      } elsif($elem eq '_filt') {
+      }elsif($elem eq '_filt'){
         $self->{'_bobj'}->{'_filt'}->{'_echg'} = 1;
         $self->{'_endx'} = 5; # return from filt jumps to view box
-      } else {
+      }else{
         $done = 1;
       }
     }
     $self->BildBrws(1);
     if     ( $char eq 'SDLK_TAB' ||                     # Ctrl-I == Tab
-            ($char =~ /^SDLK_(RIGHT|DOWN)$/ && $elem =~ /^_(cnfg|mkdr|cdup|help|open|cncl)$/)) {
+            ($char =~ /^SDLK_(RIGHT|DOWN)$/ && $elem =~ /^_(cnfg|mkdr|cdup|help|open|cncl)$/)){
       $sobj->{'_brfc'} = 'w'; $sobj->{'_brbc'} = 'k';
       $sobj->{'_btyp'} = $self->{'_btyp'} unless($elem eq '_open');
       $sobj->Draw();
       $self->{'_endx'}++;
       $self->{'_endx'} = 0 if($self->{'_endx'} == @{$self->{'_elem'}});
-      while(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}) {
+      while(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}){
         $self->{'_endx'}++;
         $self->{'_endx'} = 0 if($self->{'_endx'} == @{$self->{'_elem'}});
       }
@@ -3396,20 +3447,20 @@ sub Brws {
       $sobj = $self->{'_bobj'}->{$elem};
       $sobj->{'_brfc'} = 'C'; $sobj->{'_brbc'} = 'u';
       $sobj->{'_btyp'} = 4;
-      if($elem eq '_file') {
+      if($elem eq '_file'){
         $self->{'_choi'} =        $sobj->{'_data'};
         $sobj->{'_curs'} = length($self->{'_choi'});
         $sobj->{'_xcrs'} = length($self->{'_choi'});
       }
       $sobj->Draw();
-    } elsif( $char eq 'SDLK_u' && $self->{'_kmod'}->{'KMOD_CTRL'} || # Ctrl-U ~ Shift-Tab
-            ($char =~ /^SDLK_(LEFT|UP)$/ && $elem =~ /^_(cnfg|mkdr|cdup|help|open|cncl)$/)) {
+    }elsif( $char eq 'SDLK_u' && $self->{'_kmod'}->{'KMOD_CTRL'} || # Ctrl-U ~ Shift-Tab
+           ($char =~ /^SDLK_(LEFT|UP)$/ && $elem =~ /^_(cnfg|mkdr|cdup|help|open|cncl)$/)){
       $sobj->{'_brfc'} = 'w'; $sobj->{'_brbc'} = 'k';
       $sobj->{'_btyp'} = $self->{'_btyp'} unless($elem eq '_open');
       $sobj->Draw();
       $self->{'_endx'} = @{$self->{'_elem'}} unless($self->{'_endx'});
       $self->{'_endx'}--;
-      while(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}) {
+      while(!$self->{'_eflz'}->{$self->{'_elem'}->[$self->{'_endx'}]}){
         $self->{'_endx'} = @{$self->{'_elem'}} unless($self->{'_endx'});
         $self->{'_endx'}--;
       }
@@ -3417,70 +3468,70 @@ sub Brws {
       $sobj = $self->{'_bobj'}->{$elem};
       $sobj->{'_brfc'} = 'C'; $sobj->{'_brbc'} = 'u';
       $sobj->{'_btyp'} = 4;
-      if($elem eq '_file') {
+      if($elem eq '_file'){
         $self->{'_choi'} =        $sobj->{'_data'};
         $sobj->{'_curs'} = length($self->{'_choi'});
         $sobj->{'_xcrs'} = length($self->{'_choi'});
       }
       $sobj->Draw();
-    } elsif($char eq 'SDLK_b' && $self->{'_kmod'}->{'KMOD_CTRL'}) { # Ctrl-B toggle view background only highlighting
+    }elsif($char eq 'SDLK_b' && $self->{'_kmod'}->{'KMOD_CTRL'}){ # Ctrl-B toggle view background only highlighting
       $self->{'_flagbgho'} ^= 1;
       $self->{'_bobj'}->{'_filt'}->{'_echg'} = 1;
       $self->BildBrws(1);
-    } elsif($char eq 'SDLK_c' && $self->{'_kmod'}->{'KMOD_CTRL'}) { # Ctrl-C bring up configuration dialog
+    }elsif($char eq 'SDLK_c' && $self->{'_kmod'}->{'KMOD_CTRL'}){ # Ctrl-C bring up configuration dialog
         $self->BrwsCnfg();
-    } elsif($char eq 'SDLK_f' && $self->{'_kmod'}->{'KMOD_CTRL'}) { # Ctrl-F toggle view file highlighting
+    }elsif($char eq 'SDLK_f' && $self->{'_kmod'}->{'KMOD_CTRL'}){ # Ctrl-F toggle view file highlighting
       $self->{'_flagflhi'} ^= 1;
       $self->{'_bobj'}->{'_filt'}->{'_echg'} = 1;
       $self->BildBrws(1);
-    } elsif($char eq 'SDLK_h' && $self->{'_kmod'}->{'KMOD_CTRL'}) { # Ctrl-H toggle hidden file globbing
+    }elsif($char eq 'SDLK_h' && $self->{'_kmod'}->{'KMOD_CTRL'}){ # Ctrl-H toggle hidden file globbing
       $self->{'_flaghide'} ^= 1;
       $self->{'_bobj'}->{'_filt'}->{'_echg'} = 1;
       $self->BildBrws(1);
-    } elsif($char eq 'SDLK_t' && $self->{'_kmod'}->{'KMOD_CTRL'}) { # Ctrl-T chg btyps
+    }elsif($char eq 'SDLK_t' && $self->{'_kmod'}->{'KMOD_CTRL'}){ # Ctrl-T chg btyps
       $self->{'_btyp'}++;
       $self->{'_btyp'} = 0 if($self->{'_btyp'} > @BORDSETS);
       $self->Draw();
-      foreach(@{$self->{'_elem'}}) {
+      for(@{$self->{'_elem'}}){
         $self->{'_bobj'}->{$_}->{'_btyp'} = $self->{'_btyp'} if($_ ne $elem);
         $self->{'_bobj'}->{$_}->Draw();
       }
-    } elsif($char eq 'SDLK_F1') {
+    }elsif($char eq 'SDLK_F1'){
       $self->BrwsHelp();
-    } elsif($elem eq '_view') {
-      if     ($char eq 'SDLK_UP') {
-        if($self->{'_vndx'}) {
+    }elsif($elem eq '_view'){
+      if     ($char eq 'SDLK_UP'){
+        if($self->{'_vndx'}){
           $self->{'_vndx'}--;
           $self->{'_choi'} = $self->{'_bobj'}->{'_view'}->{'_text'}->[ $self->{'_vndx'} ];
           $self->{'_bobj'}->{'_view'}->{'_echg'} = 1;
           $self->BildBrws(1);
         }
-      } elsif($char eq 'SDLK_DOWN') {
+      }elsif($char eq 'SDLK_DOWN'){
         if($self->{'_vndx'} < (@{$self->{'_bobj'}->{'_view'}->{'_text'}} - 1)){
           $self->{'_vndx'}++;
           $self->{'_choi'} = $self->{'_bobj'}->{'_view'}->{'_text'}->[ $self->{'_vndx'} ];
           $self->{'_bobj'}->{'_view'}->{'_echg'} = 1;
           $self->BildBrws(1);
         }
-      } elsif($char eq 'SDLK_PAGEUP') {
+      }elsif($char eq 'SDLK_PAGEUP'){
         $self->{'_vndx'} -= ($self->{'_bobj'}->{'_view'}->{'_hite'} - 3);
         $self->{'_vndx'} = 0 if($self->{'_vndx'} < 0);
         $self->{'_choi'} = $self->{'_bobj'}->{'_view'}->{'_text'}->[ $self->{'_vndx'} ];
         $self->{'_bobj'}->{'_view'}->{'_echg'} = 1;
         $self->BildBrws(1);
-      } elsif($char eq 'SDLK_PAGEDOWN') {
+      }elsif($char eq 'SDLK_PAGEDOWN'){
         $self->{'_vndx'} += ($self->{'_bobj'}->{'_view'}->{'_hite'} - 3);
         $self->{'_vndx'} = (@{$self->{'_bobj'}->{'_view'}->{'_text'}} - 1)
           if($self->{'_vndx'} >= @{$self->{'_bobj'}->{'_view'}->{'_text'}});
         $self->{'_choi'} = $self->{'_bobj'}->{'_view'}->{'_text'}->[ $self->{'_vndx'} ];
         $self->{'_bobj'}->{'_view'}->{'_echg'} = 1;
         $self->BildBrws(1);
-      } elsif($char eq 'SDLK_LEFT') {
+      }elsif($char eq 'SDLK_LEFT'){
         $self->BrwsCdUp();
         $self->BildBrws(1);
-      } elsif($char eq 'SDLK_RIGHT') {
+      }elsif($char eq 'SDLK_RIGHT'){
         $choi = $self->{'_path'} . $self->{'_choi'};
-        if(-d $choi) {
+        if(-d $choi){
           $choi =~ s/^(.*\/)([^\/]+\/)\.\.\/$/$1/; # handle cd..
           $self->{'_path'} = $choi;
           $self->{'_bobj'}->{'_path'}->{'_text'}->[
@@ -3495,10 +3546,10 @@ sub Brws {
         }
       }
     }
-    if($done) { # clean up && save local choice so all objects can be destroyed
-      if   ($elem eq '_cncl') { $choi = '-1'; }
-      else                    { $choi = $self->{'_path'} . $self->{'_choi'};}
-      if($self->{'_brwt'} eq 'File' && -d $choi) {
+    if($done){ # clean up && save local choice so all objects can be destroyed
+      if   ($elem eq '_cncl'){ $choi = '-1'; }
+      else                   { $choi = $self->{'_path'} . $self->{'_choi'};}
+      if($self->{'_brwt'} eq 'File' && -d $choi){
         $choi =~ s/^(.*\/)([^\/]+\/)\.\.\/$/$1/; # handle cd..
         $self->{'_path'} = $choi;
         $self->{'_bobj'}->{'_path'}->{'_text'}->[
@@ -3519,15 +3570,14 @@ sub Brws {
   $main->FlagCVis();  # reset  cursor visibility to calling object state
   return($choi);      # return choice (file or dir name)
 }
-
-sub DESTROY {
+sub DESTROY{
   my $self = shift || return(); my $dndx = $self->{'_dndx'};
   my $shok = 1;
      $shok = 0 if(exists($self->{'_type'}) && length($self->{'_type'}));
-  if($self->{'_wind'}) {
+  if($self->{'_wind'}){
     delwin($self->{'_wind'});
-    for(++$dndx; $dndx < @DISPSTAK; $dndx++) {
-      if($DISPSTAK[$dndx] && exists(${$DISPSTAK[$dndx]}->{'_dndx'})) {
+    for(++$dndx;$dndx<@DISPSTAK;$dndx++){
+      if($DISPSTAK[$dndx] && exists(${$DISPSTAK[$dndx]}->{'_dndx'})){
         ${$DISPSTAK[$dndx]}->{'_dndx'}--;
       }
     }
@@ -3536,7 +3586,6 @@ sub DESTROY {
     $self->ShokScrn(2) if($shok);
   }
 }
-
 # VERBOSE METHOD NAME ALIASES
 *AttributeNames        = \&AttrNamz;
 *DefaultValues         = \&DfltValu;
@@ -3565,35 +3614,34 @@ sub DESTROY {
 *BrowseWindow          = \&Brws;
 *DeleteWindow          = \&DelW;
 *DelW                  = \&DESTROY;
-
 # allow color arrays to be tied too
 package Curses::Simp::FClr;
 sub TIEARRAY { # bless an anon array with just parent in case more to store
-  my $clas = shift; my $prnt = shift;
+  my $clas = shift;my $prnt = shift;
 #  carp("!*EROR*! Need additional Parent object reference  parameter to tie $clas to!\n") unless(defined($prnt) && ref($prnt) eq 'Curses::Simp');
   exit unless(defined($prnt) && ref($prnt) eq 'Curses::Simp');
   my $self = bless([$prnt], $clas);
   $prnt->{'_flagclru'} = 1;
   return($self);
 }
-sub FETCH     { return(         $_[0]->[0]->{'_fclr'}->[$_[1]]); }
-sub FETCHSIZE { return(scalar(@{$_[0]->[0]->{'_fclr'}})       ); }
-sub STORE     {
+sub FETCH    { return(         $_[0]->[0]->{'_fclr'}->[$_[1]]); }
+sub FETCHSIZE{ return(scalar(@{$_[0]->[0]->{'_fclr'}})       ); }
+sub STORE    {
   $_[0]->[0]->{'_fclr'}->[$_[1]] = $_[2];
   $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'});
 }
-sub STORESIZE {
+sub STORESIZE{
   splice(@{$_[0]->[0]->{'_fclr'}}, $_[1], @{$_[0]->[0]->{'_fclr'}} - $_[1]);
   $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'});
 }
-sub EXISTS    { return(0) unless(defined($_[0]->[0]->{'_fclr'}->[$_[1]])); return(1); }
-sub CLEAR     {             @{$_[0]->[0]->{'_fclr'}} = ();         $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); }
-sub PUSH      {        push(@{$_[0]->[0]->{'_fclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); }
-sub POP       { $_ =    pop(@{$_[0]->[0]->{'_fclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
-sub SHIFT     { $_ =  shift(@{$_[0]->[0]->{'_fclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
-sub UNSHIFT   {     unshift(@{$_[0]->[0]->{'_fclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); }
-sub SPLICE    {
-#                $_ = splice(@{$_[0]->[0]->{'_fclr'}}, @_[1..$#_]); $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
+sub EXISTS   { return(0) unless(defined($_[0]->[0]->{'_fclr'}->[$_[1]])); return(1); }
+sub CLEAR    {             @{$_[0]->[0]->{'_fclr'}} = ();         $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); }
+sub PUSH     {        push(@{$_[0]->[0]->{'_fclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); }
+sub POP      { $_ =    pop(@{$_[0]->[0]->{'_fclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
+sub SHIFT    { $_ =  shift(@{$_[0]->[0]->{'_fclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
+sub UNSHIFT  {     unshift(@{$_[0]->[0]->{'_fclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); }
+sub SPLICE   {
+#              $_ = splice(@{$_[0]->[0]->{'_fclr'}}, @_[1..$#_]); $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
   my $self = shift;
   my $offs = shift || 0;
   my $leng = shift; $leng = $self->[0]->FETCHSIZE() - $offs unless(defined($leng));
@@ -3601,8 +3649,7 @@ sub SPLICE    {
   $self->[0]->Curses::Simp::TestDraw() if($self->[0]->{'_flagadtb'});
   return($retn);
 }
-sub EXTEND    { }
-
+sub EXTEND   { }
 package Curses::Simp::BClr;
 sub TIEARRAY {
   my $clas = shift; my $prnt = shift;
@@ -3612,24 +3659,24 @@ sub TIEARRAY {
   $prnt->{'_flagclru'} = 1;
   return($self);
 }
-sub FETCH     { return(         $_[0]->[0]->{'_bclr'}->[$_[1]]); }
-sub FETCHSIZE { return(scalar(@{$_[0]->[0]->{'_bclr'}})       ); }
-sub STORE     {
+sub FETCH    { return(         $_[0]->[0]->{'_bclr'}->[$_[1]]); }
+sub FETCHSIZE{ return(scalar(@{$_[0]->[0]->{'_bclr'}})       ); }
+sub STORE    {
   $_[0]->[0]->{'_bclr'}->[$_[1]] = $_[2];
   $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'});
 }
-sub STORESIZE {
+sub STORESIZE{
   splice(@{$_[0]->[0]->{'_bclr'}}, $_[1], @{$_[0]->[0]->{'_bclr'}} - $_[1]);
   $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'});
 }
-sub EXISTS    { return(0) unless(defined($_[0]->[0]->{'_bclr'}->[$_[1]])); return(1); }
-sub CLEAR     {             @{$_[0]->[0]->{'_bclr'}} = ();         $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); }
-sub PUSH      {        push(@{$_[0]->[0]->{'_bclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); }
-sub POP       { $_ =    pop(@{$_[0]->[0]->{'_bclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); return($_); }
-sub SHIFT     { $_ =  shift(@{$_[0]->[0]->{'_bclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); return($_); }
-sub UNSHIFT   {     unshift(@{$_[0]->[0]->{'_bclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); }
-sub SPLICE    {
-#                $_ = splice(@{$_[0]->[0]->{'_bclr'}}, @_[1..$#_]); $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
+sub EXISTS   { return(0) unless(defined($_[0]->[0]->{'_bclr'}->[$_[1]])); return(1); }
+sub CLEAR    {             @{$_[0]->[0]->{'_bclr'}} = ();         $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); }
+sub PUSH     {        push(@{$_[0]->[0]->{'_bclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); }
+sub POP      { $_ =    pop(@{$_[0]->[0]->{'_bclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); return($_); }
+sub SHIFT    { $_ =  shift(@{$_[0]->[0]->{'_bclr'}});             $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); return($_); }
+sub UNSHIFT  {     unshift(@{$_[0]->[0]->{'_bclr'}}, $_[1]);      $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtb'}); }
+sub SPLICE   {
+#              $_ = splice(@{$_[0]->[0]->{'_bclr'}}, @_[1..$#_]); $_[0]->[0]->Curses::Simp::TestDraw() if($_[0]->[0]->{'_flagadtf'}); return($_); }
   my $self = shift;
   my $offs = shift || 0;
   my $leng = shift; $leng = $self->[0]->FETCHSIZE() - $offs unless(defined($leng));
@@ -3637,8 +3684,7 @@ sub SPLICE    {
   $self->[0]->Curses::Simp::TestDraw() if($self->[0]->{'_flagadtb'});
   return($retn);
 }
-sub EXTEND    { }
-
+sub EXTEND   { }
 127;
 =head1 NAME
 
@@ -3646,8 +3692,8 @@ Curses::Simp - Curses Not Quite Simple
 
 =head1 VERSION
 
-This documentation refers to version 1.2.A7DDCh3 of
-Curses::Simp, which was released on Tue Jul 13 13:12:43:03 2010.
+This documentation refers to version 1.4.A8UG1gG of
+Curses::Simp, which was released on Mon Aug 30 16:01:42:16 2010.
 
 =head1 SYNOPSIS
 
@@ -3664,7 +3710,7 @@ Curses::Simp, which was released on Tue Jul 13 13:12:43:03 2010.
 
 Curses::Simp provides a curt mechanism for updating a console screen
 with any Perl array (or multiple arrays to include color codes).
-Most key events can be obtained and tested directly.  The goal
+Most key events can be obtained and tested directly. The goal
 was ease-of-use for the common cases first and efficient
 rendering second.
 
@@ -3672,17 +3718,11 @@ rendering second.
 
 =over 2
 
-=item - figure out why ACS_ borders don't work anymore and restore as dfalt
-
 =item - mk proper scrollbars for all objects && use in Brws: view
 
+=item - Brws: mk togl to pack files left && right in view
+
 =item - mk ~/.simprc to save CPik && Brws cfg, OVERMAPP, etc.
-
-=item - 4NT: work on recognizing more keys the same as Curses (&& then SDL)
-
-=item - 4NT: write custom window support?  mk Mesg at least wrap MSGBOX
-
-=item - Brws: read ~/.LS_COLORS if -r into GLBL{OVERMAPP}
 
 =item - CPik: rewrite BildBlox to scale style to window dims if !flagshrk
           && mk sure no forg or bakg works for all styles... also add
@@ -3690,7 +3730,9 @@ rendering second.
 
 =item - CPik: add styles to pick fgcl,bgcl color code at once
 
-=item - Brws: mk togl to pack files left && right in view
+=item - 4NT: work on recognizing more keys the same as Curses (&& then SDL)
+
+=item - 4NT: write custom window support?  mk Mesg at least wrap MSGBOX
 
 =item - describe Simp objects sharing apps (ptok above pmix)
           mk OScr read Simp apps @_ param list && auto-handle --geom wxh+x+y
@@ -3708,11 +3750,11 @@ rendering second.
 =item - Prmt: add multi-line option where dtxt can split on /\n/ && ^d
           accepts entry instead of RETURN
 
-=item - Prnt: handle ascii chars under 32 with escapes like Draw
+=item - Prnt: handle ASCII chars under 32 with escapes like Draw
 
 =item - Draw: optimize rendering
 
-=item - Prnt&&Draw: handle ascii chars under 32 better than current escapes
+=item - Prnt&&Draw: handle ASCII chars under 32 better than current escapes
 
 =item - mk 'ceol' && 'ceos' params to clear text[n] from cursor on
 
@@ -3721,9 +3763,9 @@ rendering second.
 
 =back
 
-=over 4
-
         if detectable:
+
+=over 4
 
 =item - handle xterm resize events
 
@@ -4181,9 +4223,17 @@ operations, it is recommended that you employ the L<"Tied Array Interfaces">
 since they accomplish the goal of screen manipulation in a more
 Perl-friendly manner.
 
+=head3 Text or TextData
+
+=head3 FClr or ForegroundColorData
+
+=head3 BClr or BackgroundColorData
+
 =head2 Loop Accessors
 
   BTyp or WindowBorderType # loop through border types
+
+=head3 BTyp or WindowBorderType
 
 =head2 Normal Accessors
 
@@ -4201,6 +4251,30 @@ Perl-friendly manner.
   TtFC or WindowTitleForegroundColor  # title  fg color code string
   TtBC or WindowTitleBackgroundColor  # title  bg color code string
   DNdx or DisplayStackIndex           # global display index
+
+=head3 Hite or WindowHeight
+
+=head3 Widt or WindowWidth
+
+=head3 YOff or WindowYOffset
+
+=head3 XOff or WindowXOffset
+
+=head3 YCrs or CursorYOffset
+
+=head3 XCrs or CursorXOffset
+
+=head3 BrFC or WindowBorderForegroundColor
+
+=head3 BrBC or WindowBorderBackgroundColor
+
+=head3 Titl or WindowTitle
+
+=head3 TtFC or WindowTitleForegroundColor
+
+=head3 TtBC or WindowTitleBackgroundColor
+
+=head3 DNdx or DisplayStackIndex
 
 =head2 Flag Accessors
 
@@ -4228,6 +4302,87 @@ Perl-friendly manner.
     # the window behind it is updated.
   FlagClrU or FlagColorUsed     0     # ColorUsed gets set automatically
     # when color codes are used and determines if internal dialogs have color
+
+=head3 AuDr or FlagAuDr or FlagAutoDraw
+
+=head3 ADTF or FlagADTF or FlagAutoDrawTiedForegroundData
+
+=head3 ADTB or FlagADTB or FlagAutoDrawTiedBackgroundData
+
+=head3 Down or FlagDown or FlagDropIsDown
+
+=head3 Drop or FlagDrop or FlagDropDown
+
+=head3 Insr or FlagInsr or FlagInsertMode
+
+=head3 Maxi or FlagMaxi or FlagMaximize
+
+=head3 Shrk or FlagShrk or FlagShrinkToFit
+
+=head3 Cntr or FlagCntr or FlagCenter
+
+=head3 CVis or FlagCVis or FlagCursorVisible
+
+=head3 Scrl or FlagScrl or FlagScrollbar
+
+=head3 SDLK or FlagSDLK or FlagSDLKey
+
+=head3 Fram or FlagFram or FlagTimeFrame
+
+=head3 Mili or FlagMili or FlagMillisecond
+
+=head3 Prin or FlagPrin or FlagPrintInto
+
+=head3 ClrU or FlagClrU or FlagColorUsed
+
+=head2 Miscellaneous Accessors
+
+  Name     or VerboseName             # Description
+  --------    ----------------------- -------------
+  AttrNamz or AttributeNames          # list of available Simp Attributes
+  DfltValu or DefaultValues           # list of Default attribute Values
+  KQue     or KeyQueue                # list of ordered unhandled Key events
+  MQue     or KeyModQueue             # list of ordered unhandled modifiers
+  Focu     or FocusWindow             # changes Focus   to current Window
+  Updt     or UpdateWindow            # Updates display of current Window
+  CScr     or CloseScreen             # closes all opened Curses screens
+  # Note: CScr() is automatically called when any Simp program exits,
+  #   so explicit calls are probably unnecessary && redundant.
+  BordChar or PrintBorderCharacter    # utility to draw Border Characters
+  InitPair or InitializeColorPair     # utility to Initialize Color Pairs
+  MkMethdz or MakeMethods             # utility to Make many Methods
+  TestDraw                            # Tests whether AutoDraw is pending
+  BildBrws                            # utility to Build Browse dialogs
+  BrwsCdUp                            # utility to `cd ..` Browse directories
+  BrwsHelp                            # utility to print Browse Help
+
+=head3 AttrNamz or AttributeNames
+
+=head3 DfltValu or DefaultValues
+
+=head3 KQue or KeyQueue
+
+=head3 MQue or KeyModQueue
+
+=head3 Focu or FocusWindow
+
+=head3 Updt or UpdateWindow
+
+=head3 CScr or CloseScreen
+
+=head3 BordChar or PrintBorderCharacter
+
+=head3 InitPair or InitializeColorPair
+
+=head3 MkMethdz or MakeMethods
+
+=head3 TestDraw
+
+=head3 BildBrws
+
+=head3 BrwsCdUp
+
+=head3 BrwsHelp
 
 =head2 Accessor and Flag Method Usage Examples
 
@@ -4508,6 +4663,22 @@ Revision history for Perl extension Curses::Simp:
 
 =over 4
 
+=item - 1.4.A8UG1gG  Mon Aug 30 16:01:42:16 2010
+
+* t/00podc.t should pass now that my POD is updated to cover all subs
+
+* Brws: setup to read $ENV{'LS_COLORS'} into GLBL{OVERMAPP}
+
+* fixed POD error that was failing on FreeBSD because items must follow overs
+
+* tested ACS_ borders working again, restored as dfalt, added new ARROW bordset
+
+* fixed Prmt handle Eterm BACKSPACE (ord(127)) like TTY (without ndng Ctrl-BS)
+
+* fixed FlagCVis (MkMethodz CRSR flag was accidentally set as CURS)
+
+* updated license to GPLv3 and bumped minor version for the CPAN
+
 =item - 1.2.A7DDCh3  Tue Jul 13 13:12:43:03 2010
 
 * made B == Blue && K == blacK like RGB vs. CMYK
@@ -4633,9 +4804,9 @@ Curses::Simp uses (if available):
 
 Most source code should be Free!
   Code I have lawful authority over is && shall be!
-Copyright: (c) 2002-2005, Pip Stuart.
+Copyright: (c) 2002-2010, Pip Stuart.
 Copyleft : This software is licensed under the GNU General Public
-  License (version 2).  Please consult the Free Software Foundation
+  License (version 3).  Please consult the Free Software Foundation
   (http://FSF.Org) for important information about your freedom.
 
 =head1 AUTHOR

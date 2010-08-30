@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name: Curses-Simp
 abstract: Curses Not Quite Simple
-version: 1.2.A7DDCh3
+version: 1.4.A8UG1gG
 author:
   - Pip Stuart <Pip@CPAN.Org>
 license: gpl
@@ -10,8 +10,6 @@ requires:
   Curses: 0
   Math::BaseCnv: 0
   Tie::Array: 0
-  Time::Frame: 0
-  Time::PT: 0
 recommends:
 build_requires:
   Test: 0
